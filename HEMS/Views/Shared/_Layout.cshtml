@@ -3,85 +3,64 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HEMS - Holistic Exam System</title>
+    <title>@ViewData["Title"] - HEMS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
 </head>
 <body>
-
     <div id="wrapper">
         <nav id="sidebar">
             <div class="sidebar-header text-center">
-                <h4 class="mb-0 fw-bold"><i class="bi bi-mortarboard-fill text-info"></i> HEMS</h4>
+                <h4 class="mb-0 fw-bold"><i class="bi bi-mortarboard-fill text-info"></i> HU_HEMS</h4>
                 <small class="text-muted">PROJECT v1.0</small>
             </div>
 
-            <ul class="list-unstyled components">
-                @{
-                    var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
-                    var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
-                }
+            <div class="sidebar-scroll-area">
+                <ul class="list-unstyled components">
+                    @{
+                        var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
+                        var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
+                    }
 
-                @if (User.IsInRole("Coordinator"))
-                {
-                    <li class="sidebar-label">Management</li>
-                    <li class="@(currentController == "Exams" && currentAction == "Index" ? "active" : "")">
-                        <a asp-controller="Exams" asp-action="Index">
-                            <i class="bi bi-speedometer2 me-2"></i> Coordinator Desk
-                        </a>
-                    </li>
-                    <li class="@(currentController == "Exams" && currentAction == "Create" ? "active" : "")">
-                        <a asp-controller="Exams" asp-action="Create">
-                            <i class="bi bi-plus-circle me-2"></i> Create Exam
-                        </a>
-                    </li>
-                    <li class="@(currentController == "Questions" ? "active" : "")">
-                        <a asp-controller="Questions" asp-action="Create">
-                            <i class="bi bi-database-fill-add me-2"></i> Question Bank
-                        </a>
-                    </li>
-                    <li class="@(currentAction == "Reports" ? "active" : "")">
-                        <a asp-controller="Exams" asp-action="Reports">
-                            <i class="bi bi-bar-chart-line me-2"></i> Exam Analytics
-                        </a>
-                    </li>
-                }
-                else if (User.IsInRole("Student"))
-                {
-                    <li class="sidebar-label">Student Area</li>
-                    <li class="@(currentController == "Student" && currentAction == "Index" ? "active" : "")">
-                        <a asp-controller="Student" asp-action="Index">
-                            <i class="bi bi-house-door me-2"></i> My Dashboard
-                        </a>
-                    </li>
-                    <li class="@(currentAction == "ActiveExams" ? "active" : "")">
-                        <a asp-controller="Student" asp-action="Index">
-                            <i class="bi bi-pencil-square me-2"></i> Available Exams
-                        </a>
-                    </li>
-                    <li class="@(currentAction == "ViewResult" ? "active" : "")">
-                        <a asp-controller="Student" asp-action="ViewResult">
-                            <i class="bi bi-trophy me-2"></i> My Results
-                        </a>
-                    </li>
-                }
-
-                <hr class="mx-3 opacity-25">
-            </ul>
-
+                    @if (User.IsInRole("Coordinator"))
+                    {
+                        <li class="sidebar-label">Management</li>
+                        <li class="@(currentController == "Exams" && currentAction == "Index" ? "active" : "")">
+                            <a asp-controller="Exams" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i> Coordinator Desk</a>
+                        </li>
+                        <li class="@(currentController == "Exams" && currentAction == "Create" ? "active" : "")">
+                            <a asp-controller="Exams" asp-action="Create"><i class="bi bi-plus-circle me-2"></i> Create Exam</a>
+                        </li>
+                        <li class="@(currentAction == "Reports" ? "active" : "")">
+                            <a asp-controller="Exams" asp-action="Reports" asp-route-id=""><i class="bi bi-bar-chart-line me-2"></i> Exam Analytics</a>
+                        </li>
+                    }
+                    else if (User.IsInRole("Student"))
+                    {
+                        <li class="sidebar-label">Student Area</li>
+                        <li class="@(currentController == "Student" && currentAction == "Index" ? "active" : "")">
+                            <a asp-controller="Student" asp-action="Index"><i class="bi bi-house-door me-2"></i> My Dashboard</a>
+                        </li>
+                        <li class="@(currentAction == "ViewResult" ? "active" : "")">
+                            <a asp-controller="Student" asp-action="ViewResult"><i class="bi bi-trophy me-2"></i> My Results</a>
+                        </li>
+                    }
+                </ul>
+            </div>
             <div class="sidebar-footer">
                 @if (User.Identity.IsAuthenticated)
                 {
-                    <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post">
-                        <a class="logout-link text-danger" onclick="document.getElementById('logoutForm').submit();">
+                    <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="logout-btn w-100 text-start ps-4">
                             <i class="bi bi-box-arrow-right me-2"></i> Logout
-                        </a>
+                        </button>
                     </form>
                 }
                 else
                 {
-                    <a class="logout-link text-success" asp-controller="Account" asp-action="Login">
+                    <a class="logout-link text-success d-block ps-4 py-3" asp-controller="Account" asp-action="Login">
                         <i class="bi bi-box-arrow-in-right me-2"></i> Login
                     </a>
                 }
@@ -89,29 +68,19 @@
         </nav>
 
         <div id="content">
-            <header class="top-navbar d-flex justify-content-between align-items-center shadow-sm">
+            <header class="top-navbar d-flex justify-content-between align-items-center shadow-sm px-4">
                 <div class="d-flex align-items-center">
+                    <button type="button" id="sidebarCollapse" class="btn btn-light border me-3 d-lg-none">
+                        <i class="bi bi-list"></i>
+                    </button>
                     <h5 class="mb-0 text-dark fw-bold">
-                        @if (User.IsInRole("Coordinator"))
-                        {
-                            <text>Coordinator Portal</text>
-                        }
-                        else if (User.IsInRole("Student"))
-                        {
-
-                            <text>Student Portal</text>
-                        }
-                        else
-                        {
-
-                            <text>HEMS System</text>
-                        }
+                        @(User.IsInRole("Coordinator") ? "Coordinator Portal" : User.IsInRole("Student") ? "Student Portal" : "HEMS System")
                     </h5>
                 </div>
                 <div class="d-flex align-items-center">
                     @if (User.Identity.IsAuthenticated)
                     {
-                        <span class="badge bg-light text-primary border me-3 py-2 px-3">
+                        <span class="d-none d-md-inline badge bg-light text-primary border me-3 py-2 px-3">
                             <i class="bi bi-person-circle me-1"></i> @User.Identity.Name
                         </span>
                     }
@@ -124,27 +93,29 @@
                     @RenderBody()
                 </main>
             </div>
+
+            <footer class="footer">
+                <div class="container-fluid px-4 h-100 d-flex align-items-center justify-content-center text-muted small">
+                    &copy; @DateTime.Now.Year - Hu Swe Holistic Exam management System
+                </div>
+            </footer>
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/layout.js" asp-append-version="true"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            var errorMsg = '@TempData["ErrorMessage"]';
-            if (errorMsg) {
-                Swal.fire({ icon: 'warning', title: 'Attention', text: errorMsg, confirmButtonColor: '#3085d6' });
-            }
-
-            var successMsg = '@TempData["SuccessMessage"]';
-            if (successMsg) {
-                const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
-                Toast.fire({ icon: 'success', title: successMsg });
-            }
-        });
+        const msgs = {
+            error: '@TempData["ErrorMessage"]',
+            success: '@TempData["SuccessMessage"]'
+        };
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+<link href="c:\users\kumaw\source\repos\hems\hems\views\shared\_layout.cshtml.css" rel="stylesheet" />
+<a href="c:\users\kumaw\source\repos\hems\hems\views\shared\_layout.cshtml">c:\users\kumaw\source\repos\hems\hems\views\shared\_layout.cshtml</a>

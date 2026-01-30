@@ -1,0 +1,189 @@
+﻿/* 1. Global Reset & Layout Lock */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Total lock: prevents the browser window itself from moving */
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+#wrapper {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    align-items: stretch;
+}
+
+/* 2. Sidebar - Fixed with Internal Flex */
+#sidebar {
+    min-width: 260px;
+    max-width: 260px;
+    background: #1a1d20; /* Slightly darker than Bootstrap dark */
+    color: #fff;
+    display: flex;
+    flex-direction: column; /* This allows the footer to stay at bottom */
+    transition: all 0.3s ease-in-out;
+    z-index: 1050;
+    border-right: 1px solid #2c3136;
+}
+
+    #sidebar.active {
+        margin-left: -260px;
+    }
+
+/* Sidebar Branding Header */
+.sidebar-header {
+    padding: 20px;
+    background: #141619;
+    border-bottom: 1px solid #2c3136;
+}
+
+/* Scrollable Sidebar Content (if menu is long) */
+.sidebar-list-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Sidebar List Styling */
+#sidebar ul.components {
+    padding: 15px 0;
+}
+
+#sidebar ul li a {
+    padding: 12px 20px;
+    display: block;
+    color: #adb5bd;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+    #sidebar ul li a:hover, #sidebar ul li.active > a {
+        color: #fff;
+        background: #2c3136;
+        border-left: 4px solid #0dcaf0;
+    }
+
+.sidebar-label {
+    padding: 10px 20px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #6c757d;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* Sidebar Footer (Logout Section) */
+.sidebar-footer {
+    padding: 15px;
+    background: #141619;
+    border-top: 1px solid #2c3136;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    padding: 10px;
+    width: 100%;
+    text-align: left;
+    transition: 0.2s;
+}
+
+    .logout-btn:hover {
+        color: #ff4d5e;
+        background: rgba(220, 53, 69, 0.1);
+        border-radius: 5px;
+    }
+
+/* 3. Main Content Area Wrapper */
+#content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Crucial: stops content from pushing the header/footer out */
+    background-color: #f8f9fa;
+}
+
+/* Fixed Top Header */
+.top-navbar {
+    height: 65px;
+    min-height: 65px;
+    background: #fff;
+    padding: 0 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #dee2e6;
+    z-index: 1000;
+}
+
+/* THE SCROLLABLE HEART */
+.main-container {
+    flex-grow: 1;
+    overflow-y: auto; /* Enable vertical scroll only for this div */
+    padding: 25px;
+    background-color: #f4f7f6;
+    scroll-behavior: smooth;
+}
+
+/* Fixed Footer at the bottom of Content */
+.footer {
+    height: 50px;
+    min-height: 50px;
+    background: #fff;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 4. Scrollbar Customization (Optional but looks better) */
+.main-container::-webkit-scrollbar,
+.sidebar-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.main-container::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+}
+
+.main-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* 5. Mobile Responsiveness */
+@media (max-width: 992px) {
+    #sidebar {
+        position: fixed;
+        height: 100%;
+        margin-left: -260px;
+    }
+
+        #sidebar.active {
+            margin-left: 0;
+        }
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    color: #dc3545; /* Red color for logout */
+    padding: 15px 20px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: 0.2s;
+    display: block;
+    width: 100%;
+}
+
+    .logout-btn:hover {
+        background: rgba(220, 53, 69, 0.1); /* Light red background on hover */
+        color: #ff4d5e;
+    }
+
+.logout-link {
+    text-decoration: none;
+    font-size: 0.95rem;
+}

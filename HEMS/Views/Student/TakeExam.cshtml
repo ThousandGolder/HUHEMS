@@ -4,41 +4,44 @@
     int total = ViewBag.Total;
     int durationMinutes = Model.Exam.DurationMinutes > 0 ? Model.Exam.DurationMinutes : 30;
 
-    // Retrieve persistent states from ViewBag (sent by StudentController)
     var answeredIndices = ViewBag.AnsweredIndices as List<int> ?? new List<int>();
     var flaggedIndices = ViewBag.FlaggedIndices as List<int> ?? new List<int>();
 
-    // Check if this specific question was already answered to keep radio selected
     int? selectedChoiceId = ViewBag.SelectedChoiceId;
     bool isCurrentlyFlagged = flaggedIndices.Contains(currentIndex);
 }
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 exam-secure-zone">
     <div class="row">
         <div class="col-md-9">
-            <div class="d-flex justify-content-end mb-3">
-                <div class="timer-container">
-                    Time left <span id="timer" class="fw-bold">--:--:--</span>
+            <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 shadow-sm rounded">
+                <h5 class="mb-0 fw-bold text-dark">@Model.Exam.Title</h5>
+                <div class="timer-box p-2 px-3 bg-dark text-warning rounded-pill shadow-sm">
+                    <i class="bi bi-clock-history me-2"></i><span id="timer" class="fw-bold">--:--:--</span>
                 </div>
             </div>
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-2 border-end question-sidebar-info">
-                            <h5 class="fw-bold text-dark">Question @(currentIndex + 1)</h5>
-                            <p class="mb-1 text-muted">@(selectedChoiceId.HasValue ? "Saved" : "Not yet answered")</p>
-                            <p class="mb-3">Marked out of 1.00</p>
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        <div class="col-md-2 bg-light border-end p-4 text-center">
+                            <div class="sticky-top" style="top: 20px;">
+                                <h6 class="text-muted small text-uppercase fw-bold">Question</h6>
+                                <h2 class="fw-bold text-primary">@(currentIndex + 1)</h2>
+                                <hr />
+                                <p class="small mb-2">@(selectedChoiceId.HasValue ? "Answer Saved" : "Not yet answered")</p>
+                                <p class="small text-muted mb-3">Points: 1.00</p>
 
-                            <a href="javascript:void(0);" id="flagToggle" class="text-decoration-none">
-                                <i class="bi @(isCurrentlyFlagged ? "bi-flag-fill text-danger" : "bi-flag")"></i>
-                                @(isCurrentlyFlagged ? "Remove flag" : "Flag question")
-                            </a>
+                                <a href="javascript:void(0);" id="flagToggle" class="btn btn-sm @(isCurrentlyFlagged ? "btn-danger" : "btn-outline-secondary") w-100">
+                                    <i class="bi @(isCurrentlyFlagged ? "bi-flag-fill" : "bi-flag") me-1"></i>
+                                    @(isCurrentlyFlagged ? "Remove flag" : "Flag")
+                                </a>
+                            </div>
                         </div>
 
-                        <div class="col-md-10">
+                        <div class="col-md-10 p-4">
                             <div class="question-content-box mb-4">
-                                <p class="fs-5 text-dark">@Model.QuestionText</p>
+                                <p class="fs-5 text-dark mb-4">@Model.QuestionText</p>
 
                                 <form asp-controller="Student" asp-action="SubmitAnswer" method="post" id="examForm">
                                     <input type="hidden" name="qId" value="@Model.QuestionId" />
@@ -46,59 +49,71 @@
                                     <input type="hidden" name="nextIdx" value="@(currentIndex + 1)" />
                                     <input type="hidden" name="flagged" id="flaggedInput" value="@isCurrentlyFlagged.ToString().ToLower()" />
 
-                                    <div class="options mt-4">
+                                    <div class="options mt-2">
                                         @foreach (var choice in Model.Choices)
                                         {
-                                            <div class="form-check mb-3">
+                                            <div class="form-check custom-option mb-3">
                                                 <input class="form-check-input option-input" type="radio" name="choiceId"
                                                        value="@choice.ChoiceId" id="choice_@choice.ChoiceId" required
                                                        @(selectedChoiceId == choice.ChoiceId ? "checked" : "")>
-                                                <label class="form-check-label ms-2" for="choice_@choice.ChoiceId">
+                                                <label class="form-check-label ps-2 w-100 cursor-pointer" for="choice_@choice.ChoiceId">
                                                     @choice.ChoiceText
                                                 </label>
                                             </div>
                                         }
                                     </div>
-                                    <a href="javascript:void(0);" onclick="clearChoice()" class="small text-primary text-decoration-none mt-2 d-block">Clear my choice</a>
+                                    <a href="javascript:void(0);" onclick="clearChoice()" class="small text-muted text-decoration-none mt-3 d-inline-block">
+                                        <i class="bi bi-eraser"></i> Clear my choice
+                                    </a>
                                 </form>
-                            </div>
-
-                            <div class="d-flex justify-content-between">
-                                @if (currentIndex > 0)
-                                {
-                                    <a asp-action="TakeExam" asp-route-examId="@Model.ExamId" asp-route-index="@(currentIndex - 1)"
-                                       class="btn btn-secondary px-4">Previous question</a>
-                                }
-                                else
-                                {
-
-                                    <div></div>
-                                }
-
-                                <button type="button" onclick="submitExamForm()" class="btn btn-primary px-4">
-                                    @(currentIndex == total - 1 ? "Finish attempt..." : "Next question")
-                                </button>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="card-footer bg-white p-3 d-flex justify-content-between align-items-center">
+                    @if (currentIndex > 0)
+                    {
+                        <a asp-action="TakeExam" asp-route-examId="@Model.ExamId" asp-route-index="@(currentIndex - 1)"
+                           class="btn btn-outline-secondary px-4">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </a>
+                    }
+                    else
+                    {
+
+                        <div></div>
+                    }
+
+                    <button type="button" onclick="submitExamForm()" class="btn btn-primary px-5 fw-bold">
+                        @(currentIndex == total - 1 ? "Finish Attempt" : "Next Question")
+                        <i class="bi @(currentIndex == total - 1 ? "bi-check2-circle" : "bi-chevron-right") ms-1"></i>
+                    </button>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="quiz-info-box">
-                <h6 class="fw-bold mb-3">Quiz navigation</h6>
-                <div class="question-nav-grid mb-4">
-                    @for (int i = 0; i < total; i++)
-                    {
-                        <a asp-action="TakeExam" asp-route-examId="@Model.ExamId" asp-route-index="@i"
-                           id="nav-box-@i"
-                           class="nav-box @(i == currentIndex ? "current" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")">
-                            @(i + 1)
-                        </a>
-                    }
+            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-white fw-bold py-3 border-bottom">
+                    <i class="bi bi-grid-3x3-gap me-2"></i> Quiz Navigation
                 </div>
-                <a asp-action="ViewResult" asp-route-examId="@Model.ExamId" class="text-decoration-none small text-dark">Finish exam ...</a>
+                <div class="card-body">
+                    <div class="question-nav-grid mb-4">
+                        @for (int i = 0; i < total; i++)
+                        {
+                            <a asp-action="TakeExam" asp-route-examId="@Model.ExamId" asp-route-index="@i"
+                               id="nav-box-@i"
+                               class="nav-box @(i == currentIndex ? "current" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")">
+                                @(i + 1)
+                            </a>
+                        }
+                    </div>
+                    <hr />
+                    <button type="button" onclick="submitExamForm(true)" class="btn btn-link text-danger text-decoration-none p-0 small fw-bold">
+                        Finish attempt...
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -107,15 +122,42 @@
 @section Scripts {
     <script src="~/js/exam-timer.js" asp-append-version="true"></script>
     <script>
-        // Start the persistent timer
-        initPersistentTimer(@Model.ExamId, @durationMinutes);
+        // Start the persistent timer and security listeners
+        $(document).ready(function() {
+            initPersistentTimer(@Model.ExamId, @durationMinutes);
+            initSecurityFeatures(@Model.ExamId);
 
-        // Handle UI flagging and answering
-        initQuestionInteractions(@currentIndex, @Model.ExamId, @Model.QuestionId);
+            // Standard interactions (Flagging, etc.)
+            if(typeof initQuestionInteractions === 'function') {
+                 initQuestionInteractions(@currentIndex, @Model.ExamId, @Model.QuestionId);
+            }
+        });
 
         function clearChoice() {
             document.querySelectorAll('.option-input').forEach(opt => opt.checked = false);
             document.getElementById('nav-box-' + @currentIndex).classList.remove('answered');
+        }
+
+        function submitExamForm(isManualFinish = false) {
+            const isLast = @(currentIndex == total - 1 ? "true" : "false");
+
+            if (isLast || isManualFinish) {
+                Swal.fire({
+                    title: 'Finish Exam?',
+                    text: "You are about to submit your exam. You won't be able to change your answers!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    confirmButtonText: 'Yes, Submit Exam'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        localStorage.removeItem(`exam_end_time_` + @Model.ExamId);
+                        document.getElementById("examForm").submit();
+                    }
+                });
+            } else {
+                document.getElementById("examForm").submit();
+            }
         }
     </script>
 }

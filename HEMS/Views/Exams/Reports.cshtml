@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Exam Report";
+    // Statistics for the Specific Exam View
     var passCount = Model.Count(x => x.Percentage >= 50);
     var avgScore = Model.Any() ? Math.Round(Model.Average(x => x.Percentage), 1) : 0;
 }
@@ -18,99 +19,151 @@
             <h2 class="fw-bold">@ViewBag.ExamTitle</h2>
         </div>
         <div class="btn-group">
-            <button onclick="window.print()" class="btn btn-outline-primary">
-                <i class="bi bi-printer"></i> Print Report
+            @if (ViewBag.IsGeneralReport != true)
+            {
+                <a asp-action="Reports" asp-route-id="" class="btn btn-outline-primary">
+                    <i class="bi bi-graph-up"></i> General Report
+                </a>
+            }
+            <button onclick="window.print()" class="btn btn-outline-dark">
+                <i class="bi bi-printer"></i> Print
             </button>
-            <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
         </div>
     </div>
 
-    @if (Model.Any())
+    @if (ViewBag.IsGeneralReport == true)
     {
         <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm bg-primary text-white">
-                    <div class="card-body">
-                        <h6>Total Attempts</h6>
-                        <h2 class="mb-0">@Model.Count()</h2>
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Overall Exam Performance</h5>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm bg-success text-white">
                     <div class="card-body">
-                        <h6>Average Percentage</h6>
-                        <h2 class="mb-0">@avgScore%</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm bg-info text-white">
-                    <div class="card-body">
-                        <h6>Pass Rate</h6>
-                        <h2 class="mb-0">@passCount / @Model.Count()</h2>
+                        <canvas id="examChart" style="max-height: 350px;"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-    }
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                    <thead class="table-dark">
                         <tr>
-                            <th class="ps-4">Student Name</th>
-                            <th>Score</th>
-                            <th>Percentage</th>
-                            <th>Date Taken</th>
-                            <th class="text-center">Status</th>
+                            <th class="ps-4">Exam Title</th>
+                            <th>Total Questions</th>
+                            <th>Students Participated</th>
+                            <th>Average Score</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model)
                         {
                             <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bold text-dark">@item.StudentName</div>
-                                </td>
-                                <td>
-                                    <span class="text-primary fw-bold">@item.Score</span>
-                                    <span class="text-muted">/ @item.TotalQuestions</span>
-                                </td>
-                                <td>
-                                    <div class="progress" style="height: 8px; width: 100px;">
-                                        <div class="progress-bar @(item.Percentage >= 50 ? "bg-success" : "bg-danger")"
-                                             role="progressbar" style="width: @item.Percentage%"></div>
-                                    </div>
-                                    <small class="text-muted">@item.Percentage%</small>
-                                </td>
-                                <td>@item.DateTaken.ToString("MMM dd, yyyy")</td>
+                                <td class="ps-4 fw-bold">@item.ExamTitle</td>
+                                <td>@item.TotalQuestions</td>
+                                <td>@item.StudentCount</td>
+                                <td><span class="badge bg-primary">@item.AvgPercentage%</span></td>
                                 <td class="text-center">
-                                    <span class="badge rounded-pill @(item.Percentage >= 50 ? "bg-success-subtle text-success border border-success" : "bg-danger-subtle text-danger border border-danger") px-3">
-                                        @(item.Percentage >= 50 ? "Passed" : "Failed")
-                                    </span>
+                                    <a asp-action="Reports" asp-route-id="@item.ExamId" class="btn btn-sm btn-outline-primary">View Details</a>
                                 </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-
-            @if (!Model.Any())
-            {
-                <div class="text-center py-5">
-                    <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
-                    <p class="text-muted mt-2">No students have attempted this exam yet.</p>
-                </div>
-            }
         </div>
-    </div>
+    }
+    else
+    {
+        @if (Model.Any())
+        {
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h6>Total Attempts</h6>
+                            <h2 class="mb-0 fw-bold">@Model.Count()</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body text-center">
+                            <h6>Average Percentage</h6>
+                            <h2 class="mb-0 fw-bold">@avgScore%</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-info text-white">
+                        <div class="card-body text-center">
+                            <h6>Pass Rate</h6>
+                            <h2 class="mb-0 fw-bold">@passCount / @Model.Count()</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Student Name</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Date Taken</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">@item.StudentName</div>
+                                    </td>
+                                    <td>
+                                        <span class="text-primary fw-bold">@item.Score</span>
+                                        <span class="text-muted">/ @item.TotalQuestions</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 8px; width: 100px;">
+                                            <div class="progress-bar @(item.Percentage >= 50 ? "bg-success" : "bg-danger")"
+                                                 role="progressbar" style="width: @item.Percentage%"></div>
+                                        </div>
+                                        <small class="text-muted">@item.Percentage%</small>
+                                    </td>
+                                    <td>@item.DateTaken.ToString("MMM dd, yyyy")</td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill @(item.Percentage >= 50 ? "bg-success-subtle text-success border border-success" : "bg-danger-subtle text-danger border border-danger") px-3">
+                                            @(item.Percentage >= 50 ? "Passed" : "Failed")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (!Model.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No students have attempted this exam yet.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
 </div>
 
 <style>
-    /* Styling for the print button and progress bars */
     .bg-success-subtle {
         background-color: #e8f5e9;
     }
@@ -120,7 +173,7 @@
     }
 
     @@media print {
-        .btn-group, nav {
+        .btn-group, nav, .btn-sm {
             display: none !important;
         }
 
@@ -130,3 +183,18 @@
         }
     }
 </style>
+
+@section Scripts {
+    @if (ViewBag.IsGeneralReport == true)
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="~/js/exam-reports.js" asp-append-version="true"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const labels = @Html.Raw(Json.Serialize(Model.Select(m => m.ExamTitle)));
+                const scores = @Html.Raw(Json.Serialize(Model.Select(m => m.AvgPercentage)));
+                initGeneralReportChart(labels, scores);
+            });
+        </script>
+    }
+}
