@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace HEMS.Controllers
 {
@@ -20,15 +24,15 @@ namespace HEMS.Controllers
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager)
         {
-            _context = context;
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+            _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
         }
 
         // 1. Dashboard - Show available exams
         public async Task<IActionResult> Index()
         {
-            var studentId = await GetStudentId();
+            var studentId = await GetStudentIdAsync();
             if (studentId == 0) return RedirectToAction("Index", "Home");
 
             var takenExamIds = await _context.StudentExams
@@ -53,6 +57,23 @@ namespace HEMS.Controllers
             return View(exams);
         }
 
+        // 1b. Verify Exam Code
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyCode(int examId, string? enteredCode)
+        {
+            var exam = await _context.Exams.FindAsync(examId);
+            if (exam == null) return NotFound();
+
+            if (!string.IsNullOrWhiteSpace(enteredCode) && exam.ExamCode == enteredCode.Trim())
+            {
+                return RedirectToAction(nameof(TakeExam), new { examId });
+            }
+
+            TempData["Error"] = "Invalid Authorization Code. Please check with your invigilator.";
+            return RedirectToAction(nameof(Index));
+        }
+
         // 2. Security - Change Password Logic
         [HttpGet]
         public IActionResult ChangePassword() => View();
@@ -70,7 +91,6 @@ namespace HEMS.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return RedirectToAction("Login", "Account");
 
-            // Validates old password and updates to new password
             var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
 
             if (result.Succeeded)
@@ -78,7 +98,7 @@ namespace HEMS.Controllers
                 // Remove the MustChangePassword claim so the security tip no longer appears
                 try
                 {
-                    await _userManager.RemoveClaimAsync(user, new System.Security.Claims.Claim("MustChangePassword", "true"));
+                    await _userManager.RemoveClaimAsync(user, new Claim("MustChangePassword", "true"));
                 }
                 catch
                 {
@@ -101,42 +121,42 @@ namespace HEMS.Controllers
         // 3. Exam Taking Logic
         public async Task<IActionResult> TakeExam(int examId, int index = 0)
         {
-            var studentId = await GetStudentId();
-            if (studentId == 0) return RedirectToAction("Index");
+            var studentId = await GetStudentIdAsync();
+            if (studentId == 0) return RedirectToAction(nameof(Index));
 
-            var isTaken = await _context.StudentExams
+            var alreadyTaken = await _context.StudentExams
                 .AnyAsync(se => se.StudentId == studentId && se.ExamId == examId && se.TakenExam);
 
-            if (isTaken) return RedirectToAction("ViewResult", new { examId = examId });
+            if (alreadyTaken) return RedirectToAction(nameof(ViewResult), new { examId });
 
             var exam = await _context.Exams
                 .Include(e => e.Questions)
-                .ThenInclude(q => q.Choices)
+                    .ThenInclude(q => q.Choices)
                 .FirstOrDefaultAsync(e => e.ExamId == examId);
 
-            if (exam == null) return NotFound();
+            if (exam == null || exam.Questions == null) return NotFound();
 
-            var questionsList = exam.Questions.OrderBy(q => q.QuestionId).ToList();
+            var questions = exam.Questions.OrderBy(q => q.QuestionId).ToList();
+            if (index < 0 || index >= questions.Count) return RedirectToAction(nameof(ViewResult), new { examId });
 
-            if (index >= questionsList.Count) return RedirectToAction("ViewResult", new { examId = examId });
+            var currentQuestion = questions[index];
 
-            var currentQuestion = questionsList.ElementAt(index);
-            var allAttempts = await _context.ExamAttempts
+            var attempts = await _context.ExamAttempts
                 .Where(a => a.StudentId == studentId && a.ExamId == examId)
                 .ToListAsync();
 
-            var existingAttempt = allAttempts.FirstOrDefault(a => a.QuestionId == currentQuestion.QuestionId);
+            var existingAttempt = attempts.FirstOrDefault(a => a.QuestionId == currentQuestion.QuestionId);
 
             ViewBag.SelectedChoiceId = existingAttempt?.ChoiceId;
-            ViewBag.AnsweredIndices = allAttempts.Where(a => a.ChoiceId != 0)
-                .Select(a => questionsList.FindIndex(q => q.QuestionId == a.QuestionId)).ToList();
-            ViewBag.FlaggedIndices = allAttempts.Where(a => a.IsFlagged)
-                .Select(a => questionsList.FindIndex(q => q.QuestionId == a.QuestionId)).ToList();
+            ViewBag.AnsweredIndices = attempts.Where(a => a.ChoiceId != 0)
+                .Select(a => questions.FindIndex(q => q.QuestionId == a.QuestionId)).ToList();
+            ViewBag.FlaggedIndices = attempts.Where(a => a.IsFlagged)
+                .Select(a => questions.FindIndex(q => q.QuestionId == a.QuestionId)).ToList();
 
             ViewBag.Index = index;
-            ViewBag.Total = questionsList.Count;
+            ViewBag.Total = questions.Count;
             ViewBag.ExamId = examId;
-            ViewBag.durationMinutes = exam.DurationMinutes;
+            ViewBag.DurationMinutes = exam.DurationMinutes;
 
             return View(currentQuestion);
         }
@@ -146,14 +166,14 @@ namespace HEMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitAnswer(int qId, int choiceId, bool flagged, int examId, int nextIdx)
         {
-            var studentId = await GetStudentId();
+            var studentId = await GetStudentIdAsync();
             if (studentId == 0) return Unauthorized();
 
             var choice = await _context.Choices.FirstOrDefaultAsync(c => c.ChoiceId == choiceId);
-            bool correct = (choice != null && choice.IsAnswer);
+            var correct = choice != null && choice.IsAnswer;
 
             var attempt = await _context.ExamAttempts
-                .FirstOrDefaultAsync(a => a.StudentId == studentId && a.QuestionId == qId);
+                .FirstOrDefaultAsync(a => a.StudentId == studentId && a.QuestionId == qId && a.ExamId == examId);
 
             if (attempt == null)
             {
@@ -165,8 +185,8 @@ namespace HEMS.Controllers
                     ChoiceId = choiceId,
                     IsCorrect = correct,
                     IsFlagged = flagged,
-                    UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                    StartTime = DateTime.Now
+                    UserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
+                    StartTime = DateTime.UtcNow
                 });
             }
             else
@@ -178,48 +198,36 @@ namespace HEMS.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction("TakeExam", new { examId = examId, index = nextIdx });
+            return RedirectToAction(nameof(TakeExam), new { examId = examId, index = nextIdx });
         }
 
         // 5. View Result
         [HttpGet]
         public async Task<IActionResult> ViewResult(int? examId)
         {
-            var studentId = await GetStudentId();
-            if (studentId == 0) return RedirectToAction("Index");
+            var studentId = await GetStudentIdAsync();
+            if (studentId == 0) return RedirectToAction(nameof(Index));
 
-            if (examId == null || examId == 0)
+            // If no examId provided, show history list
+            if (!examId.HasValue || examId.Value == 0)
             {
-                var latestRecord = await _context.StudentExams
-                    .Where(se => se.StudentId == studentId)
-                    .OrderByDescending(se => se.StartDateTime)
-                    .FirstOrDefaultAsync();
+                var history = await _context.StudentExams
+                    .Include(se => se.Exam)
+                    .Where(se => se.StudentId == studentId && se.TakenExam)
+                    .OrderByDescending(se => se.EndDateTime)
+                    .ToListAsync();
 
-                if (latestRecord != null) examId = latestRecord.ExamId;
-                else
-                {
-                    var latestAttempt = await _context.ExamAttempts
-                        .Where(a => a.StudentId == studentId)
-                        .OrderByDescending(a => a.StartTime)
-                        .FirstOrDefaultAsync();
-
-                    if (latestAttempt == null)
-                    {
-                        TempData["ErrorMessage"] = "You haven't taken any exams yet.";
-                        return RedirectToAction("Index");
-                    }
-                    examId = latestAttempt.ExamId;
-                }
+                return View(history);
             }
 
-            var exam = await _context.Exams.FindAsync(examId);
+            var exam = await _context.Exams.Include(e => e.Questions).FirstOrDefaultAsync(e => e.ExamId == examId.Value);
             if (exam == null) return NotFound();
 
-            var finalScore = await _context.ExamAttempts
-                .CountAsync(a => a.StudentId == studentId && a.ExamId == examId && a.IsCorrect);
+            var score = await _context.ExamAttempts
+                .CountAsync(a => a.StudentId == studentId && a.ExamId == examId.Value && a.IsCorrect);
 
             var studentExam = await _context.StudentExams
-                .FirstOrDefaultAsync(se => se.StudentId == studentId && se.ExamId == examId);
+                .FirstOrDefaultAsync(se => se.StudentId == studentId && se.ExamId == examId.Value);
 
             if (studentExam == null)
             {
@@ -227,7 +235,7 @@ namespace HEMS.Controllers
                 {
                     StudentId = studentId,
                     ExamId = examId.Value,
-                    Score = (double)finalScore,
+                    Score = score,
                     TakenExam = true,
                     StartDateTime = DateTime.UtcNow,
                     EndDateTime = DateTime.UtcNow
@@ -236,7 +244,7 @@ namespace HEMS.Controllers
             }
             else
             {
-                studentExam.Score = (double)finalScore;
+                studentExam.Score = score;
                 studentExam.TakenExam = true;
                 studentExam.EndDateTime = DateTime.UtcNow;
                 _context.Entry(studentExam).State = EntityState.Modified;
@@ -244,18 +252,21 @@ namespace HEMS.Controllers
 
             await _context.SaveChangesAsync();
 
-            ViewBag.Total = await _context.Questions.CountAsync(q => q.ExamId == examId);
-            ViewBag.ExamTitle = exam.ExamTitle;
-            ViewBag.ExamId = examId;
+            var result = await _context.StudentExams
+                .Include(se => se.Exam)
+                    .ThenInclude(e => e.Questions)
+                .FirstOrDefaultAsync(se => se.StudentToExamId == studentExam.StudentToExamId);
 
-            return View(finalScore);
+            return View(result);
         }
 
-        private async Task<int> GetStudentId()
+        // Helper
+        private async Task<int> GetStudentIdAsync()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return 0;
-            var student = await _context.Students.FirstOrDefaultAsync(s => s.UserId == userId);
+
+            var student = await _context.Students.AsNoTracking().FirstOrDefaultAsync(s => s.UserId == userId);
             return student?.StudentId ?? 0;
         }
     }

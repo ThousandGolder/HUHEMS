@@ -4,6 +4,7 @@ using HEMS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HEMS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260131185409_AddExamCodeToExamTable")]
+    partial class AddExamCodeToExamTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -227,6 +230,36 @@ namespace HEMS.Migrations
                     b.ToTable("Questions");
                 });
 
+            modelBuilder.Entity("HEMS.Models.Student", b =>
+                {
+                    b.Property<int>("StudentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StudentId"));
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("StudentId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Students");
+                });
+
             modelBuilder.Entity("HEMS.Models.StudentExam", b =>
                 {
                     b.Property<int>("StudentToExamId")
@@ -395,48 +428,6 @@ namespace HEMS.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Student", b =>
-                {
-                    b.Property<int>("StudentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StudentId"));
-
-                    b.Property<string>("AcademicYear")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("IdNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("StudentId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("Students");
-                });
-
             modelBuilder.Entity("HEMS.Models.Choice", b =>
                 {
                     b.HasOne("HEMS.Models.Question", "Question")
@@ -456,7 +447,7 @@ namespace HEMS.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Student", "Student")
+                    b.HasOne("HEMS.Models.Student", "Student")
                         .WithMany("ExamAttempts")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -478,6 +469,17 @@ namespace HEMS.Migrations
                     b.Navigation("Exam");
                 });
 
+            modelBuilder.Entity("HEMS.Models.Student", b =>
+                {
+                    b.HasOne("HEMS.Models.ApplicationUser", "User")
+                        .WithOne("Student")
+                        .HasForeignKey("HEMS.Models.Student", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("HEMS.Models.StudentExam", b =>
                 {
                     b.HasOne("HEMS.Models.Exam", "Exam")
@@ -486,7 +488,7 @@ namespace HEMS.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Student", "Student")
+                    b.HasOne("HEMS.Models.Student", "Student")
                         .WithMany("StudentExams")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -548,17 +550,6 @@ namespace HEMS.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Student", b =>
-                {
-                    b.HasOne("HEMS.Models.ApplicationUser", "User")
-                        .WithOne("Student")
-                        .HasForeignKey("Student", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("HEMS.Models.ApplicationUser", b =>
                 {
                     b.Navigation("Student")
@@ -577,7 +568,7 @@ namespace HEMS.Migrations
                     b.Navigation("Choices");
                 });
 
-            modelBuilder.Entity("Student", b =>
+            modelBuilder.Entity("HEMS.Models.Student", b =>
                 {
                     b.Navigation("ExamAttempts");
 

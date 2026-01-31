@@ -8,15 +8,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.IO.Compression;
 
-
-
-
 namespace HEMS.Controllers
 {
     [Authorize(Roles = "Coordinator")]
     public class ExamsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly Cloudinary _cloudinary;
 
         public ExamsController(ApplicationDbContext context)
         {
@@ -28,9 +26,7 @@ namespace HEMS.Controllers
             );
             _cloudinary = new Cloudinary(account);
         }
-        private readonly Cloudinary _cloudinary;
 
-        
         // 1. List all exams
         public async Task<IActionResult> Index()
         {
@@ -58,6 +54,12 @@ namespace HEMS.Controllers
 
             if (ModelState.IsValid)
             {
+                // If created directly as Published, generate a code
+                if (exam.ExamStatus == "Published")
+                {
+                    exam.ExamCode = GenerateRandomCode();
+                }
+
                 _context.Add(exam);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -88,6 +90,12 @@ namespace HEMS.Controllers
             {
                 try
                 {
+                    // Logic: If status is changed to Published and no code exists, generate one
+                    if (exam.ExamStatus == "Published" && string.IsNullOrEmpty(exam.ExamCode))
+                    {
+                        exam.ExamCode = GenerateRandomCode();
+                    }
+
                     _context.Update(exam);
                     await _context.SaveChangesAsync();
                 }
@@ -99,6 +107,30 @@ namespace HEMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
             return View(exam);
+        }
+
+        // NEW: 5b. Publish Toggle Action
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Publish(int id)
+        {
+            var exam = await _context.Exams.FindAsync(id);
+            if (exam == null) return NotFound();
+
+            if (exam.ExamStatus != "Published")
+            {
+                exam.ExamStatus = "Published";
+                // Generate code if it doesn't have one
+                if (string.IsNullOrEmpty(exam.ExamCode))
+                {
+                    exam.ExamCode = GenerateRandomCode();
+                }
+
+                _context.Update(exam);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"Exam '{exam.ExamTitle}' published successfully! Code: {exam.ExamCode}";
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         // 6. View Exam Details
@@ -115,12 +147,11 @@ namespace HEMS.Controllers
             return View(exam);
         }
 
-        // 7. Reports: Handles both General (All Exams) and Specific (One Exam)
+        // 7. Reports
         public async Task<IActionResult> Reports(int? id)
         {
             if (id.HasValue)
             {
-                // --- CASE A: Specific Exam Report ---
                 var exam = await _context.Exams
                     .Include(e => e.Questions)
                     .FirstOrDefaultAsync(e => e.ExamId == id);
@@ -148,20 +179,17 @@ namespace HEMS.Controllers
             }
             else
             {
-                // --- CASE B: General Performance Report (All Exams) ---
                 var generalReport = await _context.Exams
                     .Select(e => new ExamReportViewModel
                     {
                         ExamId = e.ExamId,
                         ExamTitle = e.ExamTitle,
                         TotalQuestions = e.Questions.Count,
-                        // Count unique students who attempted this exam
                         StudentCount = _context.ExamAttempts
                             .Where(a => a.ExamId == e.ExamId)
                             .Select(a => a.StudentId)
                             .Distinct()
                             .Count(),
-                        // Total correct answers across all students for this exam
                         AverageScore = _context.ExamAttempts
                             .Where(a => a.ExamId == e.ExamId && a.IsCorrect)
                             .Count()
@@ -188,137 +216,120 @@ namespace HEMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 9. Bulk Upload Questions via ZIP
-    [HttpPost]
-    public async Task<IActionResult> BulkUpload(int id, IFormFile examZip)
-    {
-        if (examZip == null || examZip.Length == 0) return RedirectToAction("Details", new { id });
-
-        // Use the injected _cloudinary instance configured in the controller constructor
-
-        var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(tempFolder);
-
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
-        try
+        // 9. Bulk Upload
+        [HttpPost]
+        public async Task<IActionResult> BulkUpload(int id, IFormFile examZip)
         {
-            using (var stream = examZip.OpenReadStream())
-            using (var archive = new System.IO.Compression.ZipArchive(stream))
+            if (examZip == null || examZip.Length == 0) return RedirectToAction("Details", new { id });
+
+            var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempFolder);
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
             {
-                archive.ExtractToDirectory(tempFolder);
-            }
-
-            string manifestPath = Directory.GetFiles(tempFolder, "manifest.csv", SearchOption.AllDirectories).FirstOrDefault();
-            if (string.IsNullOrEmpty(manifestPath)) throw new Exception("manifest.csv missing from ZIP");
-
-            using (var reader = new StreamReader(manifestPath))
-            using (var csv = new CsvHelper.CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture))
-            {
-                var records = csv.GetRecords<dynamic>().ToList();
-
-                foreach (var row in records)
+                using (var stream = examZip.OpenReadStream())
+                using (var archive = new ZipArchive(stream))
                 {
-                    var question = new Question
-                    {
-                        ExamId = id,
-                        QuestionText = row.QuestionText,
-                        MarkWeight = 1.0m
-                    };
+                    archive.ExtractToDirectory(tempFolder);
+                }
 
-                    // 2. Upload Image to Cloudinary if it exists
-                    string imageName = row.ImageName?.ToString();
-                    if (!string.IsNullOrEmpty(imageName))
+                string manifestPath = Directory.GetFiles(tempFolder, "manifest.csv", SearchOption.AllDirectories).FirstOrDefault();
+                if (string.IsNullOrEmpty(manifestPath)) throw new Exception("manifest.csv missing from ZIP");
+
+                using (var reader = new StreamReader(manifestPath))
+                using (var csv = new CsvHelper.CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture))
+                {
+                    var records = csv.GetRecords<dynamic>().ToList();
+
+                    foreach (var row in records)
                     {
-                        var imgPath = Directory.GetFiles(tempFolder, imageName, SearchOption.AllDirectories).FirstOrDefault();
-                        if (imgPath != null)
+                        var question = new Question
                         {
-                            var uploadParams = new ImageUploadParams()
+                            ExamId = id,
+                            QuestionText = row.QuestionText,
+                            MarkWeight = 1.0m
+                        };
+
+                        string imageName = row.ImageName?.ToString();
+                        if (!string.IsNullOrEmpty(imageName))
+                        {
+                            var imgPath = Directory.GetFiles(tempFolder, imageName, SearchOption.AllDirectories).FirstOrDefault();
+                            if (imgPath != null)
                             {
-                                File = new FileDescription(imgPath),
-                                PublicId = $"hems_{Guid.NewGuid()}",
-                                Folder = "exam_questions"
-                            };
-                            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-                            // Validate upload result before using SecureUrl
-                            if (uploadResult == null || uploadResult.SecureUrl == null || uploadResult.Error != null)
-                            {
-                                var errMsg = uploadResult?.Error?.Message ?? "Cloudinary upload returned no URL.";
-                                throw new Exception($"Cloudinary upload failed for image '{imageName}': {errMsg}");
+                                var uploadParams = new ImageUploadParams()
+                                {
+                                    File = new FileDescription(imgPath),
+                                    PublicId = $"hems_{Guid.NewGuid()}",
+                                    Folder = "exam_questions"
+                                };
+                                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                                if (uploadResult?.SecureUrl == null) throw new Exception("Cloudinary upload failed.");
+                                question.ImagePath = uploadResult.SecureUrl.ToString();
                             }
-                            question.ImagePath = uploadResult.SecureUrl.ToString(); // Save the Cloudinary URL
+                        }
+
+                        _context.Questions.Add(question);
+                        await _context.SaveChangesAsync();
+
+                        string choicesRaw = row.Choices.ToString();
+                        string[] choiceArray = choicesRaw.Split('|');
+                        int correctIdx = int.Parse(row.CorrectChoiceIndex.ToString());
+
+                        for (int i = 0; i < choiceArray.Length; i++)
+                        {
+                            _context.Choices.Add(new Choice
+                            {
+                                QuestionId = question.QuestionId,
+                                ChoiceText = choiceArray[i].Trim(),
+                                IsAnswer = (i == correctIdx)
+                            });
                         }
                     }
-
-                    _context.Questions.Add(question);
-                    await _context.SaveChangesAsync();
-
-                    // 3. Dynamic Choice Handling (Splitting by |)
-                    var choicesField = row.Choices;
-                    if (choicesField == null) throw new Exception($"Choices field missing in manifest for question '{row.QuestionText}'.");
-                    string choicesRaw = choicesField.ToString();
-                    if (string.IsNullOrWhiteSpace(choicesRaw)) throw new Exception($"Choices field empty in manifest for question '{row.QuestionText}'.");
-                    string[] choiceArray = choicesRaw.Split('|');
-
-                    var correctField = row.CorrectChoiceIndex;
-                    if (correctField == null) throw new Exception($"CorrectChoiceIndex missing in manifest for question '{row.QuestionText}'.");
-                    if (!int.TryParse(correctField.ToString(), out int correctIdx)) throw new Exception($"CorrectChoiceIndex value invalid for question '{row.QuestionText}'.");
-
-                    for (int i = 0; i < choiceArray.Length; i++)
-                    {
-                        _context.Choices.Add(new Choice
-                        {
-                            QuestionId = question.QuestionId,
-                            ChoiceText = choiceArray[i].Trim(),
-                            IsAnswer = (i == correctIdx)
-                        });
-                    }
                 }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                TempData["Success"] = "Bulk upload successful!";
             }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                TempData["Error"] = $"Error: {ex.Message}";
+            }
+            finally { if (Directory.Exists(tempFolder)) Directory.Delete(tempFolder, true); }
 
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-            TempData["Success"] = "Bulk upload successful!";
+            return RedirectToAction("Details", new { id });
         }
-        catch (Exception ex)
+
+        // Helper to generate a clean numeric code
+        private string GenerateRandomCode()
         {
-            await transaction.RollbackAsync();
-            TempData["Error"] = $"Error: {ex.Message}";
+            return new Random().Next(1000, 9999).ToString();
         }
-        finally { if (Directory.Exists(tempFolder)) Directory.Delete(tempFolder, true); }
-
-        return RedirectToAction("Details", new { id });
     }
-}
 
     // --- ENHANCED VIEWMODEL ---
     public class ExamReportViewModel
     {
-        // Properties for Specific Report
         public string StudentName { get; set; } = string.Empty;
         public int Score { get; set; }
         public DateTime DateTaken { get; set; }
-
-        // Properties for General Report
         public int ExamId { get; set; }
         public string ExamTitle { get; set; } = string.Empty;
         public int StudentCount { get; set; }
-        public int AverageScore { get; set; } // Used to store total correct answers for math
-
-        // Shared Properties
+        public int AverageScore { get; set; }
         public int TotalQuestions { get; set; }
 
-        // Calculated: Single Student Percentage
         public double Percentage => TotalQuestions > 0
             ? Math.Round(((double)Score / TotalQuestions) * 100, 2) : 0;
 
-        // Calculated: General Average Percentage across all students
         public double AvgPercentage
         {
             get
             {
                 if (TotalQuestions == 0 || StudentCount == 0) return 0;
-                // Formula: (Total Correct Answers) / (Total Possible Answers across all students)
                 double totalPossibleAnswers = TotalQuestions * StudentCount;
                 return Math.Round((AverageScore / totalPossibleAnswers) * 100, 2);
             }

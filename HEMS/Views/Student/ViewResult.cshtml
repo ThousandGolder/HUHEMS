@@ -1,49 +1,152 @@
-﻿@model int
+﻿@using HEMS.Models
+@model dynamic
+
 @{
-    ViewData["Title"] = "Exam Result";
-    int totalQuestions = ViewBag.Total;
-    string examTitle = ViewBag.ExamTitle;
-    double percentage = totalQuestions > 0 ? Math.Round(((double)Model / totalQuestions) * 100, 2) : 0;
+    ViewData["Title"] = "My Results";
+    IEnumerable<StudentExam>? history = Model as IEnumerable<StudentExam>;
+    StudentExam? res = Model as StudentExam;
+    bool isHistory = history != null;
+
+    int total = 0;
+    double pct = 0;
+
+    if (!isHistory && res != null)
+    {
+        total = res.Exam?.Questions?.Count ?? 0;
+        pct = total > 0 ? Math.Round((res.Score / (double)total) * 100, 2) : 0;
+    }
 }
 
+<style>
+    /* HCI Enhancements */
+    .hover-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+        .hover-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+    .score-circle {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        border: 8px solid #f8f9fa;
+        background: white;
+    }
+
+    .score-pass {
+        border-color: #198754;
+        color: #198754;
+    }
+
+    .score-fail {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+</style>
+
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
-            <div class="card shadow border-0">
-                <div class="card-body p-5">
-                    <div class="mb-4">
-                        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
-                    </div>
 
-                    <h2 class="fw-bold mb-2">Exam Completed!</h2>
-                    <p class="text-muted mb-4">You have successfully submitted <strong>@examTitle</strong></p>
+    @* ================= EXAM HISTORY (List View) ================= *@
+    @if (isHistory && history != null)
+    {
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+            <div>
+                <h2 class="fw-bold text-dark mb-1">Performance Analytics</h2>
+                <p class="text-muted mb-0">Review your past examination attempts and progress.</p>
+            </div>
+            <a asp-action="Index" class="btn btn-light border-secondary-subtle px-4">
+                <i class="bi bi-arrow-left me-2"></i>Dashboard
+            </a>
+        </div>
 
-                    <hr />
-
-                    <div class="my-4">
-                        <h4 class="text-dark">Your Score</h4>
-                        <div class="display-3 fw-bold @(percentage >= 50 ? "text-success" : "text-danger")">
-                            @Model / @totalQuestions
+        <div class="row g-4">
+            @foreach (var item in history)
+            {
+                <div class="col-lg-6">
+                    <div class="card shadow-sm border-0 hover-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between">
+                                <div class="flex-grow-1">
+                                    <span class="badge bg-primary-subtle text-primary mb-2">Completed</span>
+                                    <h5 class="fw-bold mb-1 text-truncate" style="max-width: 250px;">@item.Exam?.ExamTitle</h5>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-calendar3 me-1"></i> @item.EndDateTime?.ToString("MMM dd, yyyy • h:mm tt")
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="h3 fw-bold mb-0">@item.Score</div>
+                                    <a asp-action="ViewResult" asp-route-examId="@item.ExamId"
+                                       class="stretched-link btn btn-link p-0 text-decoration-none text-primary fw-semibold mt-1">
+                                        Details <i class="bi bi-chevron-right ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <p class="fs-5">(@percentage%)</p>
+                    </div>
+                </div>
+            }
+
+            @if (!history.Any())
+            {
+                <div class="col-12 text-center py-5">
+                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="80" class="opacity-25 mb-3" />
+                    <p class="text-muted">No exams completed yet. Your results will appear here.</p>
+                </div>
+            }
+        </div>
+    }
+
+    @* ================= RECENT SCORE (Success/Summary View) ================= *@
+    else if (res != null)
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-5 text-center">
+                <div class="card shadow-lg border-0 animate__animated animate__fadeInUp rounded-4 overflow-hidden">
+                    <div class="card-header bg-white border-0 pt-5">
+                        <div class="score-circle @(pct >= 50 ? "score-pass" : "score-fail") shadow-sm mb-3">
+                            <span class="h1 fw-bold mb-0">@pct%</span>
+                            <span class="small fw-semibold text-uppercase">Score</span>
+                        </div>
+                        <h2 class="fw-bold mt-3">@(pct >= 50 ? "Great Job!" : "Keep Practicing")</h2>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <a asp-action="Index" class="btn btn-primary btn-lg">Back to Dashboard</a>
+                    <div class="card-body px-5 pb-5">
+                        <p class="text-muted">
+                            You've completed <strong>@res.Exam?.ExamTitle</strong>.
+                            You answered <strong>@res.Score</strong> out of <strong>@total</strong> questions correctly.
+                        </p>
+
+                        <div class="d-grid gap-3 mt-4">
+                            <a asp-action="Index" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                                <i class="bi bi-house-door me-2"></i>Return Dashboard
+                            </a>
+                            <a asp-action="ViewResult" class="btn btn-outline-secondary btn-lg rounded-pill">
+                                <i class="bi bi-clock-history me-2"></i>View All History
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 </div>
 
 @section Scripts {
     <script>
-        // CLEANUP: Clear the timer from localStorage now that the exam is finished
-        const examId = "@ViewBag.ExamId";
+        // Clean up logic
+        const urlParams = new URLSearchParams(window.location.search);
+        const examId = urlParams.get('examId');
         if (examId) {
             localStorage.removeItem(`exam_end_time_${examId}`);
-            console.log("Timer storage cleared for exam: " + examId);
         }
     </script>
 }
