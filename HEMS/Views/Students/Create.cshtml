@@ -1,0 +1,38 @@
+@model HEMS.Models.Student
+
+@{
+    ViewData["Title"] = "Add Student";
+}
+
+<div class="container py-4">
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title">Add Student</h3>
+            <form asp-action="Create" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input asp-for="FullName" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">ID Number</label>
+                    <input asp-for="IdNumber" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Gender</label>
+                    <input asp-for="Gender" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Department</label>
+                    <input asp-for="Department" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Academic Year</label>
+                    <input asp-for="AcademicYear" class="form-control" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">Create</button>
+                <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

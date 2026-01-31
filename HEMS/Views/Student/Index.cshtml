@@ -78,6 +78,23 @@
     }
 </style>
 
+
+@{
+    var mustChange = ViewBag.MustChangePassword as bool? ?? false;
+}
+
+@if (mustChange)
+{
+    <div class="alert alert-info d-flex align-items-center shadow-sm border-0">
+        <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+        <div>
+            <strong>Security Tip:</strong> Using your default password?
+            <a asp-action="ChangePassword" class="alert-link">Change it now</a> to keep your account safe.
+        </div>
+    </div>
+}
+
+
 <div class="container-fluid py-4 px-lg-5">
     <div class="page-header p-4 mb-4 shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div>

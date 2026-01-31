@@ -1,30 +1,35 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿namespace HEMS.Models;
+using HEMS.Models;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace HEMS.Models
+public class Student
 {
-    public class Student
-    {
-        [Key]
-        public int StudentId { get; set; }
+    [Key]
+    public int StudentId { get; set; }
 
-        [Required, MaxLength(100)]
-        public string FullName { get; set; } = string.Empty;
+    [Required, MaxLength(100)]
+    public string FullName { get; set; } = string.Empty;
 
-        [MaxLength(10)]
-        public string Gender { get; set; } = string.Empty;
+    [MaxLength(10)]
+    public string Gender { get; set; } = string.Empty;
 
-        public string UserId { get; set; } = string.Empty;
+    // --- NEW ACADEMIC FIELDS ---
+    [Required]
+    public string IdNumber { get; set; } = string.Empty;
 
-        [ForeignKey("UserId")]
-        public virtual ApplicationUser? User { get; set; }
+    public string AcademicYear { get; set; } = string.Empty;
 
-        public virtual ICollection<StudentExam> StudentExams { get; set; } = new List<StudentExam>();
+    public string Department { get; set; } = string.Empty;
 
-        // --- FIXED LINE BELOW ---
-        // InverseProperty tells EF that this collection belongs to the 'Student' 
-        // property inside the ExamAttempt class.
-        [InverseProperty("Student")]
-        public virtual ICollection<ExamAttempt> ExamAttempts { get; set; } = new List<ExamAttempt>();
-    }
+    // --- IDENTITY LINK ---
+    public string UserId { get; set; } = string.Empty;
+
+    [ForeignKey("UserId")]
+    public virtual ApplicationUser? User { get; set; }
+
+    public virtual ICollection<StudentExam> StudentExams { get; set; } = new List<StudentExam>();
+
+    [InverseProperty("Student")]
+    public virtual ICollection<ExamAttempt> ExamAttempts { get; set; } = new List<ExamAttempt>();
 }

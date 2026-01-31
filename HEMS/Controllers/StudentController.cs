@@ -1,20 +1,28 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using HEMS.Data;
+﻿using HEMS.Data;
 using HEMS.Models;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace HEMS.Controllers
 {
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student")] // Only logged-in students can enter
     public class StudentController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
 
-        public StudentController(ApplicationDbContext context)
+        public StudentController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager)
         {
             _context = context;
+            _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         // 1. Dashboard - Show available exams
@@ -32,10 +40,65 @@ namespace HEMS.Controllers
                 .Where(e => e.ExamStatus == "Published" && !takenExamIds.Contains(e.ExamId))
                 .ToListAsync();
 
+            // Determine if the current user must change their default password
+            var currentUser = await _userManager.GetUserAsync(User);
+            bool mustChange = false;
+            if (currentUser != null)
+            {
+                var claims = await _userManager.GetClaimsAsync(currentUser);
+                mustChange = claims.Any(c => c.Type == "MustChangePassword" && c.Value == "true");
+            }
+            ViewBag.MustChangePassword = mustChange;
+
             return View(exams);
         }
 
-        // 2. Exam Taking Logic
+        // 2. Security - Change Password Logic
+        [HttpGet]
+        public IActionResult ChangePassword() => View();
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(string oldPassword, string newPassword, string confirmPassword)
+        {
+            if (newPassword != confirmPassword)
+            {
+                ModelState.AddModelError("", "The new password and confirmation do not match.");
+                return View();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return RedirectToAction("Login", "Account");
+
+            // Validates old password and updates to new password
+            var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+
+            if (result.Succeeded)
+            {
+                // Remove the MustChangePassword claim so the security tip no longer appears
+                try
+                {
+                    await _userManager.RemoveClaimAsync(user, new System.Security.Claims.Claim("MustChangePassword", "true"));
+                }
+                catch
+                {
+                    // ignore failures removing the claim
+                }
+
+                await _signInManager.RefreshSignInAsync(user);
+                TempData["Success"] = "Your password has been updated successfully!";
+                return RedirectToAction("Index");
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError("", error.Description);
+            }
+
+            return View();
+        }
+
+        // 3. Exam Taking Logic
         public async Task<IActionResult> TakeExam(int examId, int index = 0)
         {
             var studentId = await GetStudentId();
@@ -78,7 +141,7 @@ namespace HEMS.Controllers
             return View(currentQuestion);
         }
 
-        // 3. Submit Answer
+        // 4. Submit Answer
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitAnswer(int qId, int choiceId, bool flagged, int examId, int nextIdx)
@@ -118,29 +181,23 @@ namespace HEMS.Controllers
             return RedirectToAction("TakeExam", new { examId = examId, index = nextIdx });
         }
 
-        // 4. View Result - Handles Sidebar Click (examId is null) and Direct Finish
+        // 5. View Result
         [HttpGet]
         public async Task<IActionResult> ViewResult(int? examId)
         {
             var studentId = await GetStudentId();
             if (studentId == 0) return RedirectToAction("Index");
 
-            // LOGIC: If user clicked the sidebar, find the last exam they interacted with
             if (examId == null || examId == 0)
             {
-                // Check StudentExams table first
                 var latestRecord = await _context.StudentExams
                     .Where(se => se.StudentId == studentId)
                     .OrderByDescending(se => se.StartDateTime)
                     .FirstOrDefaultAsync();
 
-                if (latestRecord != null)
-                {
-                    examId = latestRecord.ExamId;
-                }
+                if (latestRecord != null) examId = latestRecord.ExamId;
                 else
                 {
-                    // Fallback: Check ExamAttempts table if StudentExams is empty
                     var latestAttempt = await _context.ExamAttempts
                         .Where(a => a.StudentId == studentId)
                         .OrderByDescending(a => a.StartTime)
@@ -158,11 +215,9 @@ namespace HEMS.Controllers
             var exam = await _context.Exams.FindAsync(examId);
             if (exam == null) return NotFound();
 
-            // Calculate score directly from ExamAttempts for maximum accuracy
             var finalScore = await _context.ExamAttempts
                 .CountAsync(a => a.StudentId == studentId && a.ExamId == examId && a.IsCorrect);
 
-            // Sync with StudentExams table
             var studentExam = await _context.StudentExams
                 .FirstOrDefaultAsync(se => se.StudentId == studentId && se.ExamId == examId);
 

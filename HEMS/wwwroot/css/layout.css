@@ -38,6 +38,30 @@ html, body {
     border-bottom: 1px solid #2c3136;
 }
 
+/* Close button (mobile) styling inside the sidebar header */
+#sidebarClose {
+    border: none;
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background 0.15s, transform 0.12s;
+}
+
+#sidebarClose:hover {
+    background: rgba(255,255,255,0.12);
+    transform: translateY(-1px);
+}
+
+/* Ensure the close button only appears on smaller screens */
+@media (min-width: 992px) {
+    #sidebarClose { display: none; }
+}
+
 /* Scrollable Sidebar Content (if menu is long) */
 .sidebar-list-container {
     flex-grow: 1;

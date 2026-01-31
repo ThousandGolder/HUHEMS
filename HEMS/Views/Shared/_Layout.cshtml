@@ -22,7 +22,13 @@
         {
             <nav id="sidebar">
                 <div class="sidebar-header text-center">
-                    <h4 class="mb-0 fw-bold"><i class="bi bi-mortarboard-fill text-info"></i> HU_HEMS</h4>
+                    <div class="d-flex align-items-center justify-content-center w-100">
+                        <h4 class="mb-0 fw-bold me-2"><i class="bi bi-mortarboard-fill text-info"></i> HU_HEMS</h4>
+                        @* Close button visible only on small screens *@
+                        <button id="sidebarClose" class="btn btn-light btn-sm d-lg-none ms-auto" aria-label="Close sidebar">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
                     <small class="text-muted">PROJECT v1.0</small>
                 </div>
 
@@ -35,6 +41,7 @@
 
                         @if (User.IsInRole("Coordinator"))
                         {
+                      
                             <li class="sidebar-label">Management</li>
                             <li class="@(currentController == "Exams" && currentAction == "Index" ? "active" : "")">
                                 <a asp-controller="Exams" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i> Coordinator Desk</a>
@@ -44,6 +51,9 @@
                             </li>
                             <li class="@(currentAction == "Reports" ? "active" : "")">
                                 <a asp-controller="Exams" asp-action="Reports"><i class="bi bi-bar-chart-line me-2"></i> Exam Analytics</a>
+                            </li>
+                            <li class="@(currentController == "Students" && currentAction == "Index" ? "active" : "")">
+                                <a asp-controller="Students" asp-action="Index"><i class="bi bi-person-lines-fill me-2"></i> Manage Students</a>
                             </li>
                         }
                         else if (User.IsInRole("Student"))
@@ -91,7 +101,7 @@
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <span class="d-none d-md-inline badge bg-light text-primary border me-3 py-2 px-3">
-                                <i class="bi bi-person-circle me-1"></i> @User.Identity.Name
+                                <i class="bi bi-person-circle me-1"></i>
                             </span>
                         }
                         <partial name="_LoginPartial" />

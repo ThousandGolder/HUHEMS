@@ -1,0 +1,20 @@
+@model HEMS.Models.Student
+
+@{
+    ViewData["Title"] = "Delete Student";
+}
+
+<div class="container py-4">
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title">Delete Student</h3>
+            <p>Are you sure you want to delete <strong>@Model.FullName</strong>?</p>
+            <form asp-action="DeleteConfirmed" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="StudentId" />
+                <button type="submit" class="btn btn-danger">Delete</button>
+                <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

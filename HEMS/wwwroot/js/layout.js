@@ -13,6 +13,15 @@
         }
     });
 
+    // Close sidebar when the custom close button is clicked (mobile)
+    // On mobile the "active" class opens the sidebar, so remove it to close
+    $(document).on('click', '#sidebarClose', function (e) {
+        e.preventDefault();
+        if (window.innerWidth <= 992) {
+            $('#sidebar, #content').removeClass('active');
+        }
+    });
+
     // 2. Logout Confirmation (Updated for AccountController)
     $(document).on('click', '.logout-btn', function (e) {
         e.preventDefault();
