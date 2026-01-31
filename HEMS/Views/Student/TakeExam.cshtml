@@ -18,7 +18,6 @@
         .exam-secure-zone {
             user-select: none;
             -webkit-user-select: none;
-            -ms-user-select: none;
         }
 
         .cursor-pointer {
@@ -57,9 +56,7 @@
                                     <p class="small text-secondary">Mark: @questionMark.ToString("F2")</p>
                                 </div>
                             </div>
-
-                            <button type="button" id="flagToggle"
-                                    class="btn @(isCurrentlyFlagged ? "btn-danger" : "btn-outline-secondary") btn-sm w-100 py-2 shadow-sm">
+                            <button type="button" id="flagToggle" class="btn @(isCurrentlyFlagged ? "btn-danger" : "btn-outline-secondary") btn-sm w-100 py-2 shadow-sm">
                                 <i class="bi @(isCurrentlyFlagged ? "bi-flag-fill" : "bi-flag") me-1"></i>
                                 <span>@(isCurrentlyFlagged ? "Remove Flag" : "Flag Q")</span>
                             </button>
@@ -68,6 +65,14 @@
                         <div class="col-md-10 p-4 p-lg-5">
                             <div class="question-container mb-4">
                                 <p class="question-text fs-5 text-dark leading-relaxed">@Model?.QuestionText</p>
+
+                                @* ADDED: Image Rendering for Students *@
+                                @if (!string.IsNullOrEmpty(Model?.ImagePath))
+                                {
+                                    <div class="question-image my-3 text-center">
+                                        <img src="@Model.ImagePath" class="img-fluid rounded border shadow-sm" style="max-height:400px;" />
+                                    </div>
+                                }
                             </div>
 
                             <form asp-controller="Student" asp-action="SubmitAnswer" method="post" id="examForm">
@@ -96,7 +101,6 @@
                                         }
                                     }
                                 </div>
-
                                 <div class="mt-4">
                                     <button type="button" onclick="clearChoice()" class="btn btn-link text-muted text-decoration-none small p-0">
                                         <i class="bi bi-eraser-fill"></i> Clear my choice
@@ -110,8 +114,7 @@
                 <div class="card-footer bg-white d-flex justify-content-between align-items-center p-4 border-top">
                     @if (currentIndex > 0)
                     {
-                        <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@(currentIndex - 1)"
-                           class="btn btn-light border px-4 rounded-pill">
+                        <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@(currentIndex - 1)" class="btn btn-light border px-4 rounded-pill">
                             <i class="bi bi-arrow-left me-2"></i>Previous
                         </a>
                     }
@@ -123,14 +126,7 @@
 
                     @if (currentIndex == total - 1)
                     {
-                        <button type="button"
-                                class="btn btn-success px-5 py-2 rounded-pill fw-bold shadow-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#reusableConfirmModal"
-                                data-title="Finish Attempt?"
-                                data-message="Are you sure you want to submit your final answers? You cannot change them after this."
-                                data-target="examForm"
-                                data-type="form">
+                        <button type="button" class="btn btn-success px-5 py-2 rounded-pill fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#reusableConfirmModal" data-title="Finish Attempt?" data-message="Are you sure you want to submit your final answers?" data-target="examForm" data-type="form">
                             Finish Attempt <i class="bi bi-check2-all ms-2"></i>
                         </button>
                     }
@@ -154,24 +150,10 @@
                         <div class="question-grid">
                             @for (int i = 0; i < total; i++)
                             {
-                                <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@i"
-                                   id="nav-box-@i"
-                                   class="grid-box @(i == currentIndex ? "active" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")">
+                                <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@i" id="nav-box-@i" class="grid-box @(i == currentIndex ? "active" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")">
                                     @(i + 1)
                                 </a>
                             }
-                        </div>
-                        <div class="mt-4 pt-3 border-top">
-                            <button type="button"
-                                    class="btn btn-link text-danger small text-decoration-none fw-bold p-0"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#reusableConfirmModal"
-                                    data-title="Leave Exam?"
-                                    data-message="Go to summary page? Your current progress is saved."
-                                    data-target="@Url.Action("ViewResult", new { examId = Model?.ExamId })"
-                                    data-type="link">
-                                <i class="bi bi-box-arrow-right me-1"></i> Finish attempt...
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -190,23 +172,16 @@
             const examId = parseInt($("#examIdField").val()) || 0;
             const currentIndex = @currentIndex;
             const durationMinutes = @durationMinutes;
-
-            // 1. Save progress for Resume logic
             handleResumeLogic(examId, currentIndex);
-
-            // 2. TIMER LOGIC
             const storageKey = `exam_end_time_${examId}`;
             let endTime = localStorage.getItem(storageKey);
-
             if (!endTime) {
                 endTime = new Date().getTime() + (durationMinutes * 60 * 1000);
                 localStorage.setItem(storageKey, endTime);
             }
-
             function updateTimer() {
                 const now = new Date().getTime();
                 const distance = endTime - now;
-
                 if (distance < 0) {
                     clearInterval(timerInterval);
                     localStorage.removeItem(storageKey);
@@ -214,40 +189,22 @@
                     document.getElementById("examForm").submit();
                     return;
                 }
-
                 const h = Math.floor(distance / 3600000).toString().padStart(2, '0');
                 const m = Math.floor((distance % 3600000) / 60000).toString().padStart(2, '0');
                 const s = Math.floor((distance % 60000) / 1000).toString().padStart(2, '0');
                 document.getElementById("timer").innerHTML = `${h}:${m}:${s}`;
-
-                if (distance < 300000) $("#timerContainer").addClass("border-danger text-danger");
             }
             const timerInterval = setInterval(updateTimer, 1000);
             updateTimer();
-
-            // 3. Security
             initTabDetection();
-
-            // 4. Initialization
             initSecurity(examId);
             initQuestionInteractions(currentIndex, examId, @(Model?.QuestionId ?? 0));
-
-            $('.option-input').on('change', function() {
-                $('#answerStatus').removeClass('text-muted').addClass('text-success')
-                                .html('<i class="bi bi-check-circle-fill me-1"></i> Answered');
-                $(`#nav-box-${currentIndex}`).addClass('answered');
-            });
         });
-
         function clearChoice() {
             $('.option-input').prop('checked', false);
-            $('#answerStatus').removeClass('text-success').addClass('text-muted')
-                            .html('<i class="bi bi-circle me-1"></i> Not yet answered');
+            $('#answerStatus').removeClass('text-success').addClass('text-muted').html('<i class="bi bi-circle me-1"></i> Not yet answered');
             $('#nav-box-@currentIndex').removeClass('answered');
         }
-
-        function submitExamForm() {
-            document.getElementById("examForm").submit();
-        }
+        function submitExamForm() { document.getElementById("examForm").submit(); }
     </script>
 }

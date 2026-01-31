@@ -1,7 +1,6 @@
 ﻿@model HEMS.Models.Exam
-
 <div class="col-md-8">
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Questions (@(Model.Questions?.Count ?? 0))</h5>
             <a asp-controller="Questions" asp-action="Create" asp-route-examId="@Model.ExamId" class="btn btn-sm btn-light">
@@ -28,7 +27,6 @@
                                 <a asp-controller="Questions" asp-action="Edit" asp-route-id="@q.QuestionId" class="btn btn-sm btn-outline-warning border-0 me-1">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                @* FIXED: Added class and ensured data attributes are present *@
                                 <button type="button"
                                         class="btn btn-sm btn-outline-danger border-0 js-delete-question-btn"
                                         data-id="@q.QuestionId"
@@ -37,6 +35,15 @@
                                 </button>
                             </div>
                         </div>
+
+                        @* ADDED: Image Preview in Details *@
+                        @if (!string.IsNullOrEmpty(q.ImagePath))
+                        {
+                            <div class="mb-2">
+                                <img src="@q.ImagePath" class="img-thumbnail" style="max-height:100px;" />
+                            </div>
+                        }
+
                         <ul class="list-group list-group-flush mt-2">
                             @foreach (var choice in q.Choices ?? new List<Choice>())
                             {
@@ -49,6 +56,22 @@
                     </div>
                 }
             }
+        </div>
+    </div>
+
+    @* ADDED: Bulk Upload Section *@
+    <div class="card shadow-sm border-0 border-start border-4 border-success">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 text-success fw-bold"><i class="bi bi-file-earmark-zip-fill"></i> Bulk Upload Questions</h6>
+        </div>
+        <div class="card-body">
+            <form asp-controller="Exams" asp-action="BulkUpload" asp-route-id="@Model.ExamId" method="post" enctype="multipart/form-data">
+                <div class="input-group">
+                    <input type="file" name="examZip" class="form-control" accept=".zip" required />
+                    <button type="submit" class="btn btn-success px-4">Upload ZIP</button>
+                </div>
+                <small class="text-muted">Package must contain manifest.csv and images/ folder.</small>
+            </form>
         </div>
     </div>
 </div>
@@ -71,7 +94,6 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form asp-controller="Questions" asp-action="Delete" method="post">
                     @Html.AntiForgeryToken()
-                    @* Hidden input that gets filled by JS *@
                     <input type="hidden" name="id" id="modalQuestionId" />
                     <button type="submit" class="btn btn-danger px-4">Delete Now</button>
                 </form>

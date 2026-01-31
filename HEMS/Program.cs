@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using HEMS.Data;
 using HEMS.Models;
+using HEMS.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+builder.Services.AddScoped<IExamImportService, ExamImportService>();
 
 // 2. Identity Configuration
 // CHANGED: Use AddIdentity instead of AddDefaultIdentity to support custom AccountController

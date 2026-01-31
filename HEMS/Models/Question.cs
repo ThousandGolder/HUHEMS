@@ -18,6 +18,8 @@ namespace HEMS.Models
         [ForeignKey("ExamId")]
         public virtual Exam? Exam { get; set; }
 
+        public string? ImagePath { get; set; } // Nullable string
+
         // Initializing the collection avoids null reference issues and build errors
         public virtual ICollection<Choice> Choices { get; set; } = new List<Choice>();
     }

@@ -23,7 +23,16 @@ namespace HEMS.Controllers
 
             ViewBag.ExamId = examId;
             ViewBag.DefaultMark = exam.DefaultMark;
-            return View();
+
+            // Ensure the strongly-typed view receives a non-null model so TagHelpers
+            // and expressions that reference Model.* do not trigger a NullReferenceException.
+            var model = new Question
+            {
+                ExamId = examId,
+                MarkWeight = exam.DefaultMark
+            };
+
+            return View(model);
         }
 
         [HttpPost]

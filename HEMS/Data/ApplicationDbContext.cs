@@ -20,6 +20,14 @@ namespace HEMS.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
+           // This ensures MarkWeight supports decimals (e.g., 1.5 marks)
+            builder.Entity<Question>()
+                .Property(q => q.MarkWeight)
+                .HasColumnType("decimal(18,2)");
+            builder.Entity<Exam>()
+               .Property(e => e.DefaultMark) // Change 'DefaultMark' to whatever your property name is
+               .HasColumnType("decimal(18,2)");
+
             base.OnModelCreating(builder);
 
             // 1. One-to-One: ApplicationUser <-> Student

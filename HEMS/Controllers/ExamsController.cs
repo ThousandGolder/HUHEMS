@@ -1,8 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using HEMS.Data;
 using HEMS.Models;
+using HEMS.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.IO.Compression;
+
+
+
 
 namespace HEMS.Controllers
 {
@@ -14,8 +21,16 @@ namespace HEMS.Controllers
         public ExamsController(ApplicationDbContext context)
         {
             _context = context;
+            Account account = new Account(
+                "di0eli4di",
+                "113677216573493",
+                "MuED4inIpYVYE0U8ItejDUO3as0"
+            );
+            _cloudinary = new Cloudinary(account);
         }
+        private readonly Cloudinary _cloudinary;
 
+        
         // 1. List all exams
         public async Task<IActionResult> Index()
         {
@@ -172,7 +187,109 @@ namespace HEMS.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
+
+        // 9. Bulk Upload Questions via ZIP
+    [HttpPost]
+    public async Task<IActionResult> BulkUpload(int id, IFormFile examZip)
+    {
+        if (examZip == null || examZip.Length == 0) return RedirectToAction("Details", new { id });
+
+        // Use the injected _cloudinary instance configured in the controller constructor
+
+        var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempFolder);
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            using (var stream = examZip.OpenReadStream())
+            using (var archive = new System.IO.Compression.ZipArchive(stream))
+            {
+                archive.ExtractToDirectory(tempFolder);
+            }
+
+            string manifestPath = Directory.GetFiles(tempFolder, "manifest.csv", SearchOption.AllDirectories).FirstOrDefault();
+            if (string.IsNullOrEmpty(manifestPath)) throw new Exception("manifest.csv missing from ZIP");
+
+            using (var reader = new StreamReader(manifestPath))
+            using (var csv = new CsvHelper.CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture))
+            {
+                var records = csv.GetRecords<dynamic>().ToList();
+
+                foreach (var row in records)
+                {
+                    var question = new Question
+                    {
+                        ExamId = id,
+                        QuestionText = row.QuestionText,
+                        MarkWeight = 1.0m
+                    };
+
+                    // 2. Upload Image to Cloudinary if it exists
+                    string imageName = row.ImageName?.ToString();
+                    if (!string.IsNullOrEmpty(imageName))
+                    {
+                        var imgPath = Directory.GetFiles(tempFolder, imageName, SearchOption.AllDirectories).FirstOrDefault();
+                        if (imgPath != null)
+                        {
+                            var uploadParams = new ImageUploadParams()
+                            {
+                                File = new FileDescription(imgPath),
+                                PublicId = $"hems_{Guid.NewGuid()}",
+                                Folder = "exam_questions"
+                            };
+                            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                            // Validate upload result before using SecureUrl
+                            if (uploadResult == null || uploadResult.SecureUrl == null || uploadResult.Error != null)
+                            {
+                                var errMsg = uploadResult?.Error?.Message ?? "Cloudinary upload returned no URL.";
+                                throw new Exception($"Cloudinary upload failed for image '{imageName}': {errMsg}");
+                            }
+                            question.ImagePath = uploadResult.SecureUrl.ToString(); // Save the Cloudinary URL
+                        }
+                    }
+
+                    _context.Questions.Add(question);
+                    await _context.SaveChangesAsync();
+
+                    // 3. Dynamic Choice Handling (Splitting by |)
+                    var choicesField = row.Choices;
+                    if (choicesField == null) throw new Exception($"Choices field missing in manifest for question '{row.QuestionText}'.");
+                    string choicesRaw = choicesField.ToString();
+                    if (string.IsNullOrWhiteSpace(choicesRaw)) throw new Exception($"Choices field empty in manifest for question '{row.QuestionText}'.");
+                    string[] choiceArray = choicesRaw.Split('|');
+
+                    var correctField = row.CorrectChoiceIndex;
+                    if (correctField == null) throw new Exception($"CorrectChoiceIndex missing in manifest for question '{row.QuestionText}'.");
+                    if (!int.TryParse(correctField.ToString(), out int correctIdx)) throw new Exception($"CorrectChoiceIndex value invalid for question '{row.QuestionText}'.");
+
+                    for (int i = 0; i < choiceArray.Length; i++)
+                    {
+                        _context.Choices.Add(new Choice
+                        {
+                            QuestionId = question.QuestionId,
+                            ChoiceText = choiceArray[i].Trim(),
+                            IsAnswer = (i == correctIdx)
+                        });
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            TempData["Success"] = "Bulk upload successful!";
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            TempData["Error"] = $"Error: {ex.Message}";
+        }
+        finally { if (Directory.Exists(tempFolder)) Directory.Delete(tempFolder, true); }
+
+        return RedirectToAction("Details", new { id });
     }
+}
 
     // --- ENHANCED VIEWMODEL ---
     public class ExamReportViewModel
