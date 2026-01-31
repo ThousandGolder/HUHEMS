@@ -12,15 +12,16 @@ namespace HEMS.Models
         public string QuestionText { get; set; } = string.Empty;
 
         public decimal MarkWeight { get; set; } = 1.0m;
-        // FK Relationship to Exam
+
+        // FK → Exam
         public int ExamId { get; set; }
 
-        [ForeignKey("ExamId")]
+        [ForeignKey(nameof(ExamId))]
         public virtual Exam? Exam { get; set; }
 
-        public string? ImagePath { get; set; } // Nullable string
+        public string? ImagePath { get; set; }
 
-        // Initializing the collection avoids null reference issues and build errors
+        // Initialized to avoid null reference issues
         public virtual ICollection<Choice> Choices { get; set; } = new List<Choice>();
     }
 }

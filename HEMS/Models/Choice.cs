@@ -11,12 +11,13 @@ namespace HEMS.Models
         [Required]
         public string ChoiceText { get; set; } = string.Empty;
 
-        public bool IsAnswer { get; set; } = false; // Add the '= false' for safety
+        public bool IsAnswer { get; set; } = false;
 
-        // FK Relationship to Question
+        // FK → Question
         public int QuestionId { get; set; }
 
-        [ForeignKey("QuestionId")]
+        // Nullable navigation is correct for EF Core
+        [ForeignKey(nameof(QuestionId))]
         public virtual Question? Question { get; set; }
     }
 }
