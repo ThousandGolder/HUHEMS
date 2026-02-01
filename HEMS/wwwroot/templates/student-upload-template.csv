@@ -1,0 +1,10 @@
+FullName,IdNumber,Gender,AcademicYear,Department
+"John Doe","UGPR0001/20",M,2023,Software Engineering
+"Jane Smith","UGPR0002/20",F,2023,Computer Science
+
+# Notes:
+# - FullName: required
+# - IdNumber: required, used to generate username
+# - Gender: M or F (optional)
+# - AcademicYear: e.g. 2023
+# - Department: optional
