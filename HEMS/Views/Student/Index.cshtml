@@ -4,80 +4,8 @@
     ViewData["Title"] = "Student Dashboard";
 }
 
-<style>
-    :root {
-        --brand-primary: #4f46e5;
-        --brand-dark: #1e293b;
-        --brand-bg: #f8fafc;
-        --brand-success: #10b981;
-    }
-
-    body {
-        background-color: var(--brand-bg);
-    }
-
-    .page-header {
-        background: linear-gradient(135deg, var(--brand-dark) 0%, #334155 100%);
-        color: white;
-        border-radius: 12px;
-    }
-
-    .table-card {
-        border: none;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-
-    .btn-brand {
-        background-color: var(--brand-primary);
-        color: white;
-        border: none;
-        transition: 0.3s;
-    }
-
-        .btn-brand:hover {
-            background-color: #4338ca;
-            color: white;
-            transform: translateY(-1px);
-        }
-
-    .exam-id-input {
-        letter-spacing: 4px;
-        font-size: 1.5rem;
-        text-align: center;
-        font-weight: bold;
-        border: 2px solid #e2e8f0;
-    }
-
-    /* Responsive Table to Cards */
-    @@media (max-width: 991.98px) {
-        .desktop-table {
-            display: none;
-        }
-
-        .mobile-card {
-            display: block;
-            background: white;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            padding: 1.25rem;
-            border: 1px solid #e2e8f0;
-        }
-
-            .mobile-card .title {
-                font-size: 1.1rem;
-                font-weight: 700;
-                color: var(--brand-dark);
-            }
-    }
-
-    @@media (min-width: 992px) {
-        .mobile-card {
-            display: none;
-        }
-    }
-</style>
-
+<!-- Inline CSS moved to wwwroot/css/layout.css to centralize theme styles and enable reuse across views -->
+<link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
 
 @{
     var mustChange = ViewBag.MustChangePassword as bool? ?? false;

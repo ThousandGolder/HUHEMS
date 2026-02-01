@@ -249,6 +249,37 @@ body {
     gap: 8px;
 }
 
+/* Student Index specific styles moved from inline <style> in Index.cshtml */
+.exam-id-input {
+    letter-spacing: 4px;
+    font-size: 1.5rem;
+    text-align: center;
+    font-weight: bold;
+    border: 2px solid #e2e8f0;
+    padding: .5rem .75rem;
+    border-radius: 8px;
+}
+
+.btn-brand {
+    background-color: var(--brand-primary) !important;
+    color: var(--brand-text-on-primary) !important;
+    border: none;
+    transition: 0.3s;
+}
+
+.btn-brand:hover {
+    background-color: var(--brand-primary-dark) !important;
+    color: var(--brand-text-on-primary) !important;
+    transform: translateY(-1px);
+}
+
+/* Mobile card title for student index mobile layout */
+.mobile-card .title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--brand-text-on-primary);
+}
+
 /* --- Desktop Table Styling --- */
 .table-card {
     border-radius: 16px;
