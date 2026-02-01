@@ -35,6 +35,12 @@ namespace HEMS.Controllers
             return View(model);
         }
 
+        // Bulk upload UI for Questions (GET)
+        public IActionResult Bulk()
+        {
+            return View();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("QuestionText,ExamId")] Question question)
