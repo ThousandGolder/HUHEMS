@@ -14,49 +14,31 @@
 </head>
 <body class="auth-bg">
 
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-5 col-lg-4">
-                <div class="card auth-card p-4">
-                    <div class="card-body">
-                        <div class="text-center mb-4">
-                            <div class="mb-3">
-                                <i class="bi bi-mortarboard-fill text-primary" style="font-size: 3rem;"></i>
-                            </div>
-                            <h2 class="fw-bold text-dark">HEMS</h2>
-                            <p class="text-muted small">Holistic Exam Management System</p>
-                        </div>
+    <div class="login-hero">
+        <div class="auth-card card shadow-sm">
+            <div class="card-body">
+                <div class="text-center auth-hero-title">
+                    <h3 class="fw-bold">LOGIN WITH YOUR ID</h3>
+                    <div class="auth-hero-sub">Enter your username &amp; password below</div>
+                </div>
 
-                        <form asp-action="Login" method="post">
-                            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+                <form asp-action="Login" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
 
-                            <div class="form-floating mb-3">
-                                <input name="username" class="form-control" id="email" placeholder="name@example.com" required>
-                                <label for="username">Username</label>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input name="password" type="password" class="form-control" id="password" placeholder="Password" required>
-                                <label for="password">Password</label>
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="remember">
-                                    <label class="form-check-label small" for="remember">Remember me</label>
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary btn-auth w-100 mb-3 text-white shadow">
-                                Sign In <i class="bi bi-box-arrow-in-right ms-2"></i>
-                            </button>
-                        </form>
-
+                    <div class="form-floating mb-3">
+                        <input name="username" class="form-control" id="email" placeholder="name@example.com" required>
+                        <label for="username">Username</label>
                     </div>
-                </div>
-                <div class="text-center mt-4 text-white-50 small">
-                    &copy; 2026 HEMS Project
-                </div>
+
+                    <div class="form-floating mb-4">
+                        <input name="password" type="password" class="form-control" id="password" placeholder="Password" required>
+                        <label for="password">Password</label>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-auth">LOG IN NOW</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

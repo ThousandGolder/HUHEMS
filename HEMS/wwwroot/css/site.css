@@ -82,36 +82,79 @@ body {
 
 
 /* --- Authentication (Login/Register) --- */
+/* Authentication layout for centered login card with decorative diagonal color block */
 .auth-bg {
-    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    background: #f3f4f6;
     min-height: 100vh;
     display: flex;
     align-items: center;
+    justify-content: center;
     width: 100%;
+    padding: 40px 20px;
+}
+
+.login-hero {
+    width: 100%;
+    max-width: 980px;
+    height: 420px;
+    border-radius: 12px;
+    position: relative;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+/* Decorative colored panel (was yellow in example) - now using #16812A */
+.login-hero::before {
+    content: "";
+    position: absolute;
+    left: -10%;
+    bottom: -10%;
+    width: 70%;
+    height: 60%;
+    background: linear-gradient(180deg, #16812A 0%, #1a9a3a 100%);
+    transform: skewY(-8deg);
+    z-index: 1;
 }
 
 .auth-card {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    background: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 360px;
+    border-radius: 8px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    background: #fff;
+    z-index: 2;
+    padding: 30px;
 }
+
+.auth-card .card-body { padding: 0; }
+
+.auth-hero-title { text-align: center; margin-bottom: 18px; }
+.auth-hero-sub { text-align: center; color: #6b7280; margin-bottom: 18px; }
+
+.form-floating .form-control { border-radius: 999px; background: #f3f4f6; }
+.form-floating .form-control:focus { background: #f3f4f6; box-shadow: none; }
 
 .btn-auth {
-    background-color: #3498db;
+    background-color: #16812A; /* requested green */
     border: none;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: 0.3s;
+    padding: 12px 28px;
+    border-radius: 999px;
+    font-weight: 700;
+    transition: 0.18s;
     color: white;
 }
+.btn-auth:hover { background-color: #126f23; transform: translateY(-2px); }
 
-    .btn-auth:hover {
-        background-color: #2980b9;
-        transform: translateY(-2px);
-        color: white;
-    }
+/* small responsive adjustments */
+@media (max-width: 767.98px) {
+    .login-hero { height: auto; padding: 40px 20px; }
+    .auth-card { position: static; transform: none; width: 100%; margin: 0 auto; }
+    .login-hero::before { height: 240px; width: 100%; left: 0; transform: skewY(-6deg); }
+}
 
 /* --- Sidebar Structure --- */
 #wrapper {
