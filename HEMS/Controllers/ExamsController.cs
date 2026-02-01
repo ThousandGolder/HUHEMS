@@ -160,18 +160,34 @@ namespace HEMS.Controllers
 
                 int totalQuestionsCount = exam.Questions?.Count ?? 0;
 
-                var reportData = await _context.ExamAttempts
-                    .Where(a => a.ExamId == id)
-                    .Include(a => a.Student)
-                    .GroupBy(a => new { a.StudentId, a.Student.FullName })
-                    .Select(g => new ExamReportViewModel
-                    {
-                        StudentName = g.Key.FullName,
-                        Score = g.Count(x => x.IsCorrect),
-                        TotalQuestions = totalQuestionsCount,
-                        DateTaken = g.Max(x => x.StartTime)
-                    })
+                // Build report for each registered student (including those who haven't taken)
+                var allStudents = await _context.Students
+                    .OrderBy(s => s.FullName)
                     .ToListAsync();
+
+                var attempts = await _context.ExamAttempts
+                    .Where(a => a.ExamId == id)
+                    .ToListAsync();
+
+                var reportData = allStudents
+                    .Select(s =>
+                    {
+                        var studentAttempts = attempts.Where(a => a.StudentId == s.StudentId).ToList();
+                        int score = studentAttempts.Count(a => a.IsCorrect);
+                        string status;
+                        if (!studentAttempts.Any()) status = "Not Taken";
+                        else status = (totalQuestionsCount > 0 && score * 100.0 / totalQuestionsCount >= 50) ? "Passed" : "Failed";
+
+                        return new ExamReportViewModel
+                        {
+                            StudentName = s.FullName,
+                            Score = score,
+                            TotalQuestions = totalQuestionsCount,
+                            DateTaken = studentAttempts.Any() ? studentAttempts.Max(a => a.StartTime) : DateTime.MinValue,
+                            Status = status
+                        };
+                    })
+                    .ToList();
 
                 ViewBag.ExamTitle = exam.ExamTitle;
                 ViewBag.IsGeneralReport = false;
@@ -315,6 +331,7 @@ namespace HEMS.Controllers
     {
         public string StudentName { get; set; } = string.Empty;
         public int Score { get; set; }
+        public string Status { get; set; } = string.Empty;
         public DateTime DateTaken { get; set; }
         public int ExamId { get; set; }
         public string ExamTitle { get; set; } = string.Empty;

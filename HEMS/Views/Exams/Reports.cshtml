@@ -3,8 +3,9 @@
 @{
     ViewData["Title"] = "Exam Report";
     // Statistics for the Specific Exam View
-    var passCount = Model.Count(x => x.Percentage >= 50);
-    var avgScore = Model.Any() ? Math.Round(Model.Average(x => x.Percentage), 1) : 0;
+    var passCount = Model.Count(x => x.Status == "Passed");
+    var taken = Model.Where(x => x.Status != "Not Taken").ToList();
+    var avgScore = taken.Any() ? Math.Round(taken.Average(x => x.Percentage), 1) : 0;
 }
 
 <div class="container mt-3">
@@ -79,7 +80,7 @@
                     <div class="card border-0 shadow-sm bg-primary text-white">
                         <div class="card-body text-center">
                             <h6>Total Attempts</h6>
-                            <h2 class="mb-0 fw-bold">@Model.Count()</h2>
+                            <h2 class="mb-0 fw-bold">@Model.Count(x => x.Status != "Not Taken")</h2>
                         </div>
                     </div>
                 </div>
@@ -128,15 +129,15 @@
                                     </td>
                                     <td>
                                         <div class="progress" style="height: 8px; width: 100px;">
-                                            <div class="progress-bar @(item.Percentage >= 50 ? "bg-success" : "bg-danger")"
+                                            <div class="progress-bar @(item.Status == "Passed" ? "bg-success" : item.Status == "Failed" ? "bg-danger" : "bg-secondary")"
                                                  role="progressbar" style="width: @item.Percentage%"></div>
                                         </div>
                                         <small class="text-muted">@item.Percentage%</small>
                                     </td>
-                                    <td>@item.DateTaken.ToString("MMM dd, yyyy")</td>
+                                    <td>@(item.DateTaken == DateTime.MinValue ? "-" : item.DateTaken.ToString("MMM dd, yyyy"))</td>
                                     <td class="text-center">
-                                        <span class="badge rounded-pill @(item.Percentage >= 50 ? "bg-success-subtle text-success border border-success" : "bg-danger-subtle text-danger border border-danger") px-3">
-                                            @(item.Percentage >= 50 ? "Passed" : "Failed")
+                                        <span class="badge rounded-pill @(item.Status == "Passed" ? "bg-success-subtle text-success border border-success" : item.Status == "Failed" ? "bg-danger-subtle text-danger border border-danger" : "bg-secondary-subtle text-secondary border border-secondary") px-3">
+                                            @item.Status
                                         </span>
                                     </td>
                                 </tr>

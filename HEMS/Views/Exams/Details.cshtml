@@ -3,7 +3,7 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Questions (@(Model.Questions?.Count ?? 0))</h5>
-            <a asp-controller="Questions" asp-action="Create" asp-route-examId="@Model.ExamId" class="btn btn-sm btn-light">
+            <a asp-controller="Questions" asp-action="Create" asp-route-examId="@Model.ExamId" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-plus-circle"></i> Add Question
             </a>
         </div>
@@ -24,7 +24,7 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <h6 class="pe-3"><strong>Q@(qCount++):</strong> @q.QuestionText</h6>
                             <div class="d-flex">
-                                <a asp-controller="Questions" asp-action="Edit" asp-route-id="@q.QuestionId" class="btn btn-sm btn-outline-warning border-0 me-1">
+                                <a asp-controller="Questions" asp-action="Edit" asp-route-id="@q.QuestionId" class="btn btn-sm btn-outline-primary border-0 me-1">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <button type="button"
@@ -68,7 +68,7 @@
             <form asp-controller="Exams" asp-action="BulkUpload" asp-route-id="@Model.ExamId" method="post" enctype="multipart/form-data">
                 <div class="input-group">
                     <input type="file" name="examZip" class="form-control" accept=".zip" required />
-                    <button type="submit" class="btn btn-success px-4">Upload ZIP</button>
+                    <button type="submit" class="btn btn-primary px-4">Upload ZIP</button>
                 </div>
                 <small class="text-muted">Package must contain manifest.csv and images/ folder.</small>
             </form>

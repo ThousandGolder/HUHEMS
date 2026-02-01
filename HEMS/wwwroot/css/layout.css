@@ -33,10 +33,12 @@ html, body {
 
 /* Sidebar Branding Header */
 .sidebar-header {
-    padding: 20px;
-    background: #141619;
-    border-bottom: 1px solid #2c3136;
+    padding: 18px 16px;
+    background: transparent; /* header inherits sidebar gradient */
+    border-bottom: 1px solid rgba(255,255,255,0.06);
 }
+
+.sidebar-logo { border: 2px solid rgba(255,255,255,0.08); }
 
 /* Close button (mobile) styling inside the sidebar header */
 #sidebarClose {
@@ -77,15 +79,15 @@ html, body {
 #sidebar ul li a {
     padding: 12px 20px;
     display: block;
-    color: #adb5bd;
+    color: #ffffff; /* make sidebar navs white */
     text-decoration: none;
-    transition: 0.2s;
+    transition: background 0.18s, color 0.18s;
 }
 
     #sidebar ul li a:hover, #sidebar ul li.active > a {
-        color: #fff;
-        background: #2c3136;
-        border-left: 4px solid #0dcaf0;
+        color: #0f1721; /* dark text on hover */
+        background: rgba(255,255,255,0.92); /* white background on hover */
+        border-left: 4px solid var(--brand-primary-light);
     }
 
 .sidebar-label {
@@ -214,7 +216,10 @@ html, body {
 
 /* --- Root Variables --- */
 :root {
-    --brand-primary: #4f46e5;
+    /* Primary color updated to match provided screenshot (green) */
+    --brand-primary: #1e9b33; /* main green */
+    --brand-primary-dark: #147a28; /* darker shade for header */
+    --brand-primary-light: #8fe2a0; /* lighter sidebar bottom */
     --brand-success: #10b981;
     --brand-warning: #f59e0b;
     --brand-danger: #ef4444;
@@ -355,3 +360,124 @@ body {
         display: none;
     }
 }
+
+/* ---------- Global Theme Overrides (consistent primary color) ---------- */
+/* Use the brand variables defined earlier to make styling consistent site-wide */
+:root {
+    --brand-text-on-primary: #ffffff;
+    --brand-muted: #6b7280;
+    --brand-secondary: #6c757d;
+    --brand-light-bg: #f8fafc;
+}
+
+/* Sidebar: enforce gradient from the brand colors */
+#sidebar {
+    background: linear-gradient(180deg, var(--brand-primary-dark) 0%, var(--brand-primary) 55%, var(--brand-primary-light) 100%) !important;
+}
+
+/* Top navbar uses primary color */
+.top-navbar {
+    background: var(--brand-primary) !important;
+    color: var(--brand-text-on-primary) !important;
+}
+.top-navbar .nav-link, .top-navbar h5 { color: var(--brand-text-on-primary) !important; }
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+    color: var(--brand-text-on-primary) !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--brand-primary-dark) !important;
+    border-color: var(--brand-primary-dark) !important;
+}
+.btn-outline-primary {
+    color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+}
+.btn-outline-primary:hover {
+    color: var(--brand-text-on-primary) !important;
+    background-color: var(--brand-primary) !important;
+}
+
+/* Badges */
+.badge.bg-primary, .badge-primary {
+    background-color: var(--brand-primary) !important;
+    color: var(--brand-text-on-primary) !important;
+}
+
+/* Links */
+a.text-primary, .text-primary { color: var(--brand-primary) !important; }
+
+/* Table header subtle primary tint */
+.table thead th {
+    background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.0)), var(--brand-primary-dark) !important;
+    color: var(--brand-text-on-primary) !important;
+}
+
+/* Progress bar color mapping */
+.progress-bar.bg-success { background-color: var(--brand-success) !important; }
+.progress-bar.bg-danger { background-color: var(--brand-danger) !important; }
+.progress-bar.bg-secondary { background-color: #9ca3af !important; }
+
+/* Not-taken subtle badge */
+.bg-secondary-subtle { background-color: #f3f4f6; color: var(--brand-muted); }
+
+/* Primary subtle background used for badges like 'Live' */
+.bg-primary-subtle { background-color: rgba(30,155,51,0.08); color: var(--brand-primary-dark); }
+
+/* Card header accent */
+.card-header.bg-white h5 { color: var(--brand-primary-dark); }
+
+/* Ensure icons inside sidebar have consistent tint */
+#sidebar .bi { color: rgba(255,255,255,0.9); }
+
+/* Small helper for border accents */
+.border-primary-subtle { border-color: rgba(30,155,51,0.12) !important; }
+
+/* End global theme overrides */
+
+/* Strong overrides to ensure brand colors are used everywhere (override Bootstrap defaults) */
+/* Utility overrides */
+.bg-primary { background-color: var(--brand-primary) !important; color: var(--brand-text-on-primary) !important; }
+.text-primary { color: var(--brand-primary) !important; }
+.border-primary { border-color: var(--brand-primary) !important; }
+
+/* Top navbar enforcement */
+.top-navbar {
+    background: var(--brand-primary) !important;
+    color: var(--brand-text-on-primary) !important;
+}
+.top-navbar .nav-link, .top-navbar .h5, .top-navbar .badge { color: var(--brand-text-on-primary) !important; }
+
+/* Card headers using bg-primary should match brand */
+.card-header.bg-primary { background-color: var(--brand-primary) !important; color: var(--brand-text-on-primary) !important; }
+
+/* Outline primary buttons */
+.btn-outline-primary { color: var(--brand-primary) !important; border-color: var(--brand-primary) !important; }
+.btn-outline-primary:hover { background-color: var(--brand-primary) !important; color: var(--brand-text-on-primary) !important; }
+
+/* Subtle primary background */
+.bg-primary-subtle { background-color: rgba(30,155,51,0.08) !important; }
+
+
+/* Final enforcement: high-specificity rules to prevent Bootstrap default purple showing */
+header.top-navbar, nav.top-navbar, .top-navbar {
+    background-color: var(--brand-primary) !important;
+    color: var(--brand-text-on-primary) !important;
+    border-color: rgba(0,0,0,0.06) !important;
+}
+
+/* Ensure any element with bg-primary uses brand color */
+.bg-primary, .navbar.bg-primary, .card-header.bg-primary, header.bg-primary {
+    background-color: var(--brand-primary) !important;
+    color: var(--brand-text-on-primary) !important;
+}
+
+/* Override Bootstrap utility classes that might set purple text/icons */
+.text-primary, a.text-primary, .bi.text-primary { color: var(--brand-primary) !important; }
+
+/* Buttons and badges inside the top navbar should be visible */
+.top-navbar .btn, .top-navbar .badge, .top-navbar .nav-link { color: var(--brand-text-on-primary) !important; }
+
