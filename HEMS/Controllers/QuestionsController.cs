@@ -69,6 +69,10 @@ namespace HEMS.Controllers
             {
                 _context.Add(question);
                 await _context.SaveChangesAsync();
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, redirectUrl = Url.Action("ManageChoices", new { questionId = question.QuestionId }) });
+                }
                 return RedirectToAction("ManageChoices", new { questionId = question.QuestionId });
             }
 
@@ -101,6 +105,11 @@ namespace HEMS.Controllers
 
             if (choiceExists)
             {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { duplicate = true, message = "Duplicate Choice: This option already exists for this question." });
+                }
+
                 TempData["ErrorMessage"] = "Duplicate Choice: This option already exists for this question.";
                 return RedirectToAction(nameof(ManageChoices), new { questionId });
             }

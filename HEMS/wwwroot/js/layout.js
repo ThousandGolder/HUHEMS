@@ -49,15 +49,7 @@
 
     // 3. Handle SweetAlert Notifications
     if (typeof msgs !== 'undefined') {
-        if (msgs.error && msgs.error.trim() !== "" && msgs.error !== '@TempData["ErrorMessage"]') {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Attention',
-                text: msgs.error,
-                confirmButtonColor: '#3085d6'
-            });
-        }
-
+        // Only show success toasts here. Error messages are rendered as page banners in the layout
         if (msgs.success && msgs.success.trim() !== "" && msgs.success !== '@TempData["SuccessMessage"]') {
             const Toast = Swal.mixin({
                 toast: true,

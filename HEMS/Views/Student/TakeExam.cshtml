@@ -33,7 +33,7 @@
                     <button type="button" id="toggleTimerVisibility" class="btn btn-sm p-0 border-0 text-muted">
                         <i class="bi bi-eye-fill" id="eyeIcon"></i>
                     </button>
-                </div>
+                </div> 
             </div>
 
             <div class="card shadow-sm border-0 mb-4 overflow-hidden main-exam-card">
@@ -190,7 +190,15 @@
             if (!endTime) {
                 endTime = new Date().getTime() + (durationMinutes * 60 * 1000);
                 localStorage.setItem(storageKey, endTime);
+                // Clear any previous notification markers for this exam (different attempts may have left keys)
+                Object.keys(localStorage).forEach(function (k) {
+                    if (k.startsWith(`exam_notify_15_${examId}_`) || k.startsWith(`exam_notify_5_${examId}_`)) {
+                        localStorage.removeItem(k);
+                    }
+                });
             }
+            // Ensure endTime is numeric
+            endTime = parseInt(endTime, 10);
 
             function updateTimer() {
                 const now = new Date().getTime();
@@ -212,8 +220,100 @@
                 if (distance < 60000) $("#timer").addClass("text-danger");
             }
 
-            const timerInterval = setInterval(updateTimer, 1000);
-            updateTimer();
+            // Notification thresholds (minutes)
+            // Keys are namespaced by examId and endTime so notifications don't leak across attempts
+            // (notify keys are created after endTime is known below)
+
+            // Timer visibility toggle - remember preference per exam
+            const visKey = `exam_timer_visible_${examId}`;
+            let timerVisible = localStorage.getItem(visKey);
+            timerVisible = (timerVisible === null) ? true : (timerVisible === '1');
+
+            function applyTimerVisibility() {
+                if (timerVisible) {
+                    $('.pulse-timer').show();
+                    $('#timer').show();
+                    $('#eyeIcon').removeClass('bi-eye-slash').addClass('bi-eye-fill');
+                } else {
+                    $('.pulse-timer').hide();
+                    $('#timer').hide();
+                    $('#eyeIcon').removeClass('bi-eye-fill').addClass('bi-eye-slash');
+                }
+            }
+
+            // Wire up toggle button
+            $('#toggleTimerVisibility').on('click', function () {
+                timerVisible = !timerVisible;
+                localStorage.setItem(visKey, timerVisible ? '1' : '0');
+                applyTimerVisibility();
+            });
+
+            // call once to set initial visibility state
+            applyTimerVisibility();
+
+            // Now that endTime is known, create per-attempt notification keys
+            const notifyKey15 = `exam_notify_15_${examId}_${endTime}`;
+            const notifyKey5 = `exam_notify_5_${examId}_${endTime}`;
+            let notified15 = localStorage.getItem(notifyKey15) === '1';
+            let notified5 = localStorage.getItem(notifyKey5) === '1';
+
+            // If the stored notified flags exist but the remaining time is greater than the threshold,
+            // clear them so the user will be notified at the correct thresholds for this attempt.
+            (function normalizeNotifyFlags() {
+                const now = new Date().getTime();
+                const distance = endTime - now;
+                const minutesLeftNow = Math.floor(distance / 60000);
+                if (notified15 && minutesLeftNow > 15) {
+                    notified15 = false;
+                    localStorage.removeItem(notifyKey15);
+                }
+                if (notified5 && minutesLeftNow > 5) {
+                    notified5 = false;
+                    localStorage.removeItem(notifyKey5);
+                }
+            })();
+
+            // Enhanced update to check notification thresholds
+            function updateTimerWithNotices() {
+                const now = new Date().getTime();
+                const distance = endTime - now;
+                if (distance <= 0) return; // handled elsewhere
+
+                const minutesLeft = Math.floor(distance / 60000);
+
+                // Notify at or below 15 minutes
+                if (!notified15 && minutesLeft <= 15) {
+                    notified15 = true;
+                    localStorage.setItem(notifyKey15, '1');
+                    try {
+                        updateModalContent('15 minutes remaining', 'You have 15 minutes left to complete the exam. Please manage your time accordingly.', null, 'warning');
+                        const modalEl = document.getElementById('reusableConfirmModal');
+                        const modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                    } catch (e) { console.warn(e); }
+                }
+
+                // Notify at or below 5 minutes — show a brief, non-blocking alert
+                if (!notified5 && minutesLeft <= 5) {
+                    notified5 = true;
+                    localStorage.setItem(notifyKey5, '1');
+                    try {
+                        updateModalContent('5 minutes remaining', 'Only 5 minutes left. Please finish and submit your answers now.', null, 'danger');
+                        const modalEl = document.getElementById('reusableConfirmModal');
+                        // create modal instance and show it, then auto-hide after a short duration so it doesn't fully block the browser
+                        const modal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
+                        modal.show();
+                        // Auto-dismiss after 6 seconds to avoid locking the UI
+                        setTimeout(() => {
+                            try { modal.hide(); } catch (e) { /* ignore */ }
+                        }, 6000);
+                    } catch (e) { console.warn(e); }
+                }
+            }
+
+            const timerInterval = setInterval(function() { updateTimer(); updateTimerWithNotices(); }, 1000);
+            // run both once immediately
+            updateTimer(); updateTimerWithNotices();
 
             // Answer status update
             $('.option-input').on('change', function() {

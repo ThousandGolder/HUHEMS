@@ -58,7 +58,7 @@
                         }
                         else if (User.IsInRole("Student"))
                         {
-                            <li class="sidebar-label">Student Area</li>
+                            <li class="sidebar-label text-white">Student Area</li>
                             <li class="@(currentController == "Student" && currentAction == "Index" ? "active" : "")">
                                 <a asp-controller="Student" asp-action="Index"><i class="bi bi-house-door me-2"></i> My Dashboard</a>
                             </li>
@@ -81,10 +81,10 @@
                             <i class="bi bi-list"></i>
                         </button>
                         <a asp-controller="Home" asp-action="Index" class="d-flex align-items-center text-decoration-none">
-                            <img src="~/images/haramaya-seal.jpg" alt="HU-HEMS" class="rounded-circle me-2" style="width:36px;height:36px;object-fit:cover;border:2px solid rgba(255,255,255,0.12);" />
-                            <span class="h5 mb-0 fw-bold text-white">HU-HEMS</span>
+                            <img src="~/images/haramaya-seal.jpg" alt="HU-HEMS" class="rounded-circle me-2 brand-logo" style="width:36px;height:36px;object-fit:cover;border:2px solid rgba(255,255,255,0.12);" />
+                            <span class="h5 mb-0 fw-bold text-white brand-text">HU-HEMS</span>
                         </a>
-                        <small class="ms-3 text-white-50">
+                        <small class="ms-1 text-white-100 brand-sub">
                             @(User.IsInRole("Coordinator") ? "Coordinator Portal" : User.IsInRole("Student") ? "Student Portal" : "HEMS System")
                         </small>
                     </div>
@@ -93,6 +93,29 @@
                     </div>
                 </header>
             }
+
+        @* Global TempData alerts (show success/error across the app) *@
+        @if (TempData["SuccessMessage"] != null || TempData["Success"] != null)
+        {
+            <div class="container-fluid px-4 mt-3">
+                <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <div class="flex-grow-1">@Html.Raw(TempData["SuccessMessage"] ?? TempData["Success"])</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null || TempData["Error"] != null)
+        {
+            <div class="container-fluid px-4 mt-3">
+                <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                    <div class="flex-grow-1">@Html.Raw(TempData["ErrorMessage"] ?? TempData["Error"])</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        }
 
             <div class="main-container">
                 <main role="main">
@@ -115,8 +138,8 @@
     <script src="~/js/layout.js" asp-append-version="true"></script>
 
     <script>
+        // Only pass success messages to client scripts. Error messages are rendered as inline banners above content.
         const msgs = {
-            error: '@TempData["ErrorMessage"]',
             success: '@TempData["SuccessMessage"]'
         };
 

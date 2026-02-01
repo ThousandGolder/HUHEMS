@@ -19,6 +19,46 @@
     window.updateModalContent = function (title, message, target, type) {
         document.getElementById('confirmTitle').innerText = title;
         document.getElementById('confirmMessage').innerText = message;
+        // Set icon and header style according to type
+        const iconEl = document.getElementById('confirmIcon');
+        const headerEl = document.querySelector('#reusableConfirmModal .modal-header');
+        // reset header classes
+        if (headerEl) {
+            headerEl.classList.remove('bg-success','bg-danger','bg-warning','bg-info','bg-primary','text-white');
+        }
+        if (iconEl) {
+            iconEl.className = 'bi bi-info-circle';
+            iconEl.style.color = '';
+            iconEl.style.fontSize = '2.5rem';
+        }
+        if (type === 'warning') {
+            if (headerEl) headerEl.classList.add('bg-warning','text-dark');
+            if (iconEl) { iconEl.className = 'bi bi-exclamation-triangle-fill'; iconEl.style.color = '#b45309'; }
+        } else if (type === 'danger') {
+            if (headerEl) headerEl.classList.add('bg-danger','text-white');
+            if (iconEl) { iconEl.className = 'bi bi-x-circle-fill'; iconEl.style.color = '#dc2626'; }
+        } else if (type === 'success') {
+            if (headerEl) headerEl.classList.add('bg-success','text-white');
+            if (iconEl) { iconEl.className = 'bi bi-check-circle-fill'; iconEl.style.color = '#15803d'; }
+        } else if (type === 'info') {
+            if (headerEl) headerEl.classList.add('bg-info','text-dark');
+            if (iconEl) { iconEl.className = 'bi bi-info-circle-fill'; iconEl.style.color = '#0ea5e9'; }
+        } else {
+            if (headerEl) headerEl.classList.add('bg-primary','text-white');
+            if (iconEl) { iconEl.className = 'bi bi-info-circle-fill'; iconEl.style.color = ''; }
+        }
+
+        // Make the message text red for warnings/danger to increase visibility
+        const msgEl = document.getElementById('confirmMessage');
+        if (msgEl) {
+            if (type === 'warning' || type === 'danger') {
+                msgEl.style.color = '#dc2626';
+            } else {
+                msgEl.style.color = '#475569';
+            }
+        }
+
+        // Do not hide page banners here anymore - layout controls duplicates. Keep modal-only behavior.
 
         const confirmBtn = document.getElementById('confirmActionButton');
         const newConfirmBtn = confirmBtn.cloneNode(true);
@@ -31,9 +71,9 @@
             } else if (type === 'link') {
                 window.location.href = target;
             } else {
-                // Just close for warnings
+                // Just close for warnings/infos
                 const modalInstance = bootstrap.Modal.getInstance(confirmModal);
-                modalInstance.hide();
+                if (modalInstance) modalInstance.hide();
             }
         });
     }

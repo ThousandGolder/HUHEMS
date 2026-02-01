@@ -51,10 +51,32 @@ namespace HEMS.Controllers
         {
             if (!ModelState.IsValid) return View(student);
 
+            // Prevent duplicate students by ID number
+            if (!string.IsNullOrWhiteSpace(student.IdNumber))
+            {
+                var exists = await _context.Students.AnyAsync(s => s.IdNumber == student.IdNumber);
+                if (exists)
+                {
+                    ModelState.AddModelError(string.Empty, "User already exists with this ID number.");
+                    return View(student);
+                }
+            }
+
             // Generate credentials similar to bulk upload
             string last4 = student.IdNumber != null && student.IdNumber.Length >= 4 ? student.IdNumber.Substring(student.IdNumber.Length - 4) : student.IdNumber ?? "0000";
-            string cleanName = student.FullName.Replace(" ", "");
-            string generatedUsername = $"{cleanName}{last4.Replace("/", "")}";
+            // sanitize and generate a base username
+            string cleanName = new string(student.FullName.Where(char.IsLetterOrDigit).ToArray());
+            if (string.IsNullOrWhiteSpace(cleanName)) cleanName = "student";
+            string baseUsername = $"{cleanName}{last4.Replace("/", "")}";
+            string generatedUsername = baseUsername;
+            int suffix = 1;
+            // ensure username uniqueness
+            while (await _userManager.FindByNameAsync(generatedUsername) != null)
+            {
+                generatedUsername = baseUsername + suffix.ToString();
+                suffix++;
+                if (suffix > 1000) break; // avoid infinite loop
+            }
             string generatedPassword = $"{generatedUsername}@HUHEMS";
 
             var user = new ApplicationUser
@@ -63,6 +85,13 @@ namespace HEMS.Controllers
                 Email = $"{generatedUsername}@huhems.edu",
                 EmailConfirmed = true
             };
+            // Ensure email doesn't already exist
+            var emailExists = await _userManager.FindByEmailAsync(user.Email);
+            if (emailExists != null)
+            {
+                ModelState.AddModelError(string.Empty, "A user with the generated email already exists. Please modify the student's name or ID.");
+                return View(student);
+            }
 
             var result = await _userManager.CreateAsync(user, generatedPassword);
             if (!result.Succeeded)
@@ -169,6 +198,31 @@ namespace HEMS.Controllers
             return await DeleteConfirmed(StudentId);
         }
 
+        // AJAX: Check if a student exists by ID number to prevent duplicates (used by Create form)
+        [HttpGet]
+        public async Task<IActionResult> CheckId(string idNumber)
+        {
+            if (string.IsNullOrWhiteSpace(idNumber))
+            {
+                return Json(new { exists = false, message = string.Empty });
+            }
+
+            var exists = await _context.Students.AnyAsync(s => s.IdNumber == idNumber);
+            return Json(new { exists = exists, message = exists ? "User already exists with this ID number." : string.Empty });
+        }
+
+        // AJAX: Check multiple IDs (bulk) - expects JSON array of idNumbers in request body
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckIdsBulk([FromBody] List<string> idNumbers)
+        {
+            if (idNumbers == null || !idNumbers.Any()) return Json(new { existing = new List<string>() });
+
+            var trimmed = idNumbers.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList();
+            var existing = await _context.Students.Where(s => trimmed.Contains(s.IdNumber)).Select(s => s.IdNumber).ToListAsync();
+            return Json(new { existing = existing });
+        }
+
         [HttpPost]
         public async Task<IActionResult> BulkUpload(IFormFile studentFile)
         {
@@ -181,25 +235,51 @@ namespace HEMS.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var createdCount = 0;
+                var skipped = new List<string>();
                 using (var reader = new StreamReader(studentFile.OpenReadStream()))
                 using (var csv = new CsvHelper.CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture))
                 {
                     var records = csv.GetRecords<dynamic>().ToList();
 
-                    // Minimal processing here: you can implement actual creation logic as needed
                     foreach (var rec in records)
                     {
-                        // Example: attempt to extract fields if present; skip if missing
                         try
                         {
                             var dict = rec as IDictionary<string, object>;
-                            string fullName = dict != null && dict.ContainsKey("FullName") ? (dict["FullName"]?.ToString() ?? string.Empty) : string.Empty;
-                            string idNumber = dict != null && dict.ContainsKey("IdNumber") ? (dict["IdNumber"]?.ToString() ?? string.Empty) : string.Empty;
+
+                            // helper to read fields case-insensitively and accept common header variants
+                            string GetField(IDictionary<string, object> d, params string[] keys)
+                            {
+                                if (d == null) return string.Empty;
+                                foreach (var k in keys)
+                                {
+                                    var match = d.Keys.FirstOrDefault(x => string.Equals(x, k, StringComparison.OrdinalIgnoreCase));
+                                    if (match != null)
+                                    {
+                                        return d[match]?.ToString()?.Trim() ?? string.Empty;
+                                    }
+                                }
+                                return string.Empty;
+                            }
+
+                            string fullName = GetField(dict, "FullName", "Full Name", "Name", "fullname");
+                            string idNumber = GetField(dict, "IdNumber", "ID", "Identifier", "Id Number");
 
                             if (string.IsNullOrWhiteSpace(fullName))
+                            {
+                                skipped.Add("Missing FullName");
                                 continue;
+                            }
 
-                            // Create student entity
+                            // Prevent duplicates by ID number
+                            if (!string.IsNullOrWhiteSpace(idNumber) && await _context.Students.AnyAsync(s => s.IdNumber == idNumber))
+                            {
+                                skipped.Add($"{fullName} ({idNumber}): already exists");
+                                continue;
+                            }
+
+                            // Prepare student entity
                             var student = new Student
                             {
                                 FullName = fullName,
@@ -209,16 +289,33 @@ namespace HEMS.Controllers
                                 Department = ""
                             };
 
-                            // Generate username/password similar to single create
+                            // Generate a unique username
                             string last4 = student.IdNumber != null && student.IdNumber.Length >= 4 ? student.IdNumber.Substring(student.IdNumber.Length - 4) : student.IdNumber ?? "0000";
-                            string cleanName = student.FullName.Replace(" ", "");
-                            string generatedUsername = $"{cleanName}{last4.Replace("/", "")}";
+                            string cleanName = new string(student.FullName.Where(char.IsLetterOrDigit).ToArray());
+                            if (string.IsNullOrWhiteSpace(cleanName)) cleanName = "student";
+                            string baseUsername = $"{cleanName}{last4.Replace("/", "")}";
+                            string generatedUsername = baseUsername;
+                            int suffix = 1;
+                            while (await _userManager.FindByNameAsync(generatedUsername) != null)
+                            {
+                                generatedUsername = baseUsername + suffix.ToString();
+                                suffix++;
+                                if (suffix > 1000) break;
+                            }
+
                             string generatedPassword = $"{generatedUsername}@HUHEMS";
+                            string userEmail = $"{generatedUsername}@huhems.edu";
+
+                            if (await _userManager.FindByEmailAsync(userEmail) != null)
+                            {
+                                skipped.Add($"{fullName} ({idNumber}): email {userEmail} exists");
+                                continue;
+                            }
 
                             var user = new ApplicationUser
                             {
                                 UserName = generatedUsername,
-                                Email = $"{generatedUsername}@huhems.edu",
+                                Email = userEmail,
                                 EmailConfirmed = true
                             };
 
@@ -226,16 +323,19 @@ namespace HEMS.Controllers
                             if (result.Succeeded)
                             {
                                 await _userManager.AddToRoleAsync(user, "Student");
-                                // mark new user to change default password on first login
                                 await _userManager.AddClaimAsync(user, new Claim("MustChangePassword", "true"));
                                 student.UserId = user.Id;
                                 _context.Students.Add(student);
+                                createdCount++;
                             }
-                            // If user creation failed, skip and continue; optionally collect errors
+                            else
+                            {
+                                skipped.Add($"{fullName} ({idNumber}): {string.Join(';', result.Errors.Select(e => e.Description))}");
+                            }
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            // skip malformed record
+                            skipped.Add("Malformed record: " + ex.Message);
                         }
                     }
 
@@ -243,7 +343,15 @@ namespace HEMS.Controllers
                 }
 
                 await transaction.CommitAsync();
-                TempData["Success"] = "Bulk upload completed.";
+                // Summarize results for user feedback
+                var summary = $"Bulk upload completed. Created: {createdCount}. Skipped: {skipped.Count}.";
+                if (skipped.Any())
+                {
+                    // include a few examples of skipped reasons
+                    var examples = string.Join("; ", skipped.Take(5));
+                    summary += " Examples: " + examples + (skipped.Count > 5 ? "..." : "");
+                }
+                TempData["Success"] = summary;
                 return RedirectToAction("Index");
             }
             catch (Exception ex)

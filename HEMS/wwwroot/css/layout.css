@@ -277,7 +277,129 @@ body {
 .mobile-card .title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--brand-text-on-primary);
+    color: var(--brand-dark); /* ensure title is readable on white mobile cards */
+}
+
+/* Ensure buttons in the white page header remain visible (override Bootstrap .btn-outline-light) */
+.page-header .btn-outline-light {
+    color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+}
+.page-header .btn-outline-light:hover {
+    background-color: var(--brand-primary-dark) !important;
+    color: var(--brand-text-on-primary) !important;
+    border-color: var(--brand-primary-dark) !important;
+}
+
+/* Dropdown user menu styles to improve contrast and interactivity */
+.user-dropdown {
+    min-width: 240px;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+.user-dropdown .user-name {
+    color: var(--brand-primary-dark);
+}
+.user-dropdown .btn-light {
+    background: #f8fafc;
+    border: 1px solid #e6eef3;
+}
+.user-dropdown .btn-light {
+    background: #f8fafc;
+    border: 1px solid #e6eef3;
+    color: #000 !important; /* ensure text is visible without hover */
+}
+.user-dropdown .btn-light:hover {
+    background: var(--brand-primary-light);
+    color: var(--brand-dark) !important;
+}
+.user-dropdown .btn-outline-danger {
+    border-color: var(--brand-danger);
+    color: #000 !important; /* visible by default */
+}
+.user-dropdown .btn-outline-danger:hover {
+    background: var(--brand-danger);
+    color: #fff !important;
+    border-color: var(--brand-danger) !important;
+}
+
+/* Make dropdown buttons more interactive */
+.user-dropdown .btn {
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+}
+.user-dropdown .btn:active { transform: translateY(1px); }
+.user-dropdown .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+
+/* Force all interactive elements in the user dropdown to be readable (black) by default */
+.user-dropdown a,
+.user-dropdown button,
+.user-dropdown .btn,
+.user-dropdown .dropdown-item {
+    color: #000 !important;
+}
+
+/* Increase opacity of dropdown text to ensure visibility (applies to all children) */
+.user-dropdown,
+.user-dropdown * {
+    color: rgba(0,0,0,0.95) !important;
+}
+
+/* Keep the secondary/muted line less prominent but still readable */
+.user-dropdown .text-muted {
+    color: rgba(0,0,0,0.58) !important;
+}
+
+/* Ensure icons inside the dropdown are dark and match text */
+.user-dropdown .bi {
+    color: rgba(0,0,0,0.95) !important;
+}
+
+/* Explicit rule for button text span to ensure visibility */
+.user-dropdown .btn-text {
+    color: rgba(0,0,0,0.95) !important;
+    opacity: 1 !important;
+    font-weight: 600;
+}
+
+/* Confirmation modal improvements */
+#reusableConfirmModal .modal-content { border-radius: 18px; }
+#reusableConfirmModal .modal-header { border-radius: 18px 18px 0 0; }
+#reusableConfirmModal .modal-body { padding: 1.75rem; }
+#reusableConfirmModal .modal-footer { padding-bottom: 1.5rem; border: none; }
+#reusableConfirmModal .btn { border-radius: 999px; }
+#reusableConfirmModal .btn-primary { box-shadow: 0 8px 20px rgba(16,24,40,0.08); }
+#reusableConfirmModal .btn-light { background: #fff; border: 1px solid #e9eef3; }
+#reusableConfirmModal .modal-body p { color: #475569; }
+
+/* Hamburger (mobile) button - use brand green instead of white */
+#sidebarCollapse, #sidebarClose {
+    background-color: #228B22 !important; /* brand green */
+    color: #fff !important;
+    border-color: rgba(0,0,0,0.08) !important;
+}
+
+#sidebarCollapse i, #sidebarClose i {
+    color: #fff !important;
+}
+
+#sidebarCollapse:hover, #sidebarClose:hover {
+    background-color: #1b6f1b !important; /* slightly darker on hover */
+}
+
+/* Brand text and logo: hidden on desktop, show on small devices only */
+.brand-text { display: none; }
+.brand-logo { display: none; }
+/* subtitle (Coordinator/Student Portal) should display on all sizes */
+.brand-sub { display: inline-block; color: #ffffff; font-size: 1rem; font-weight: 600; opacity: 0.95; margin-left: 0.5rem; }
+
+@media (max-width: 991.98px) {
+    .brand-text { display: inline-block !important; }
+    .brand-logo { display: inline-block !important; }
+    /* keep subtitle visible on small devices as well */
+    .brand-sub { display: inline-block !important; }
+}
+@media (max-width: 991.98px) {
+    .brand-logo { display: inline-block; }
 }
 
 /* --- Desktop Table Styling --- */
