@@ -9,27 +9,66 @@
         <div class="card-body">
             <h3 class="card-title">Add Student</h3>
             <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                 <div class="mb-3">
                     <label class="form-label">Full Name</label>
                     <input asp-for="FullName" class="form-control" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">ID Number</label>
                     <input asp-for="IdNumber" class="form-control" />
+                    <span asp-validation-for="IdNumber" class="text-danger small"></span>
+                    <div id="idCheckFeedback" class="form-text text-danger small" style="display:none;"></div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Gender</label>
                     <input asp-for="Gender" class="form-control" />
+                    <span asp-validation-for="Gender" class="text-danger small"></span>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Department</label>
                     <input asp-for="Department" class="form-control" />
+                    <span asp-validation-for="Department" class="text-danger small"></span>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Academic Year</label>
                     <input asp-for="AcademicYear" class="form-control" />
+                    <span asp-validation-for="AcademicYear" class="text-danger small"></span>
                 </div>
 
+@section Scripts {
+    <script>
+        (function(){
+            const idInput = document.querySelector('input[name="IdNumber"]');
+            const feedback = document.getElementById('idCheckFeedback');
+            if (!idInput || !feedback) return;
+
+            let timeout = null;
+            idInput.addEventListener('input', function() {
+                feedback.style.display = 'none';
+                clearTimeout(timeout);
+                const val = idInput.value.trim();
+                if (!val) return;
+                timeout = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`/Students/CheckId?idNumber=${encodeURIComponent(val)}`);
+                        const data = await res.json();
+                        if (data.exists) {
+                            feedback.innerText = data.message || 'User already exists';
+                            feedback.style.display = 'block';
+                        } else {
+                            feedback.style.display = 'none';
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }, 500);
+            });
+        })();
+    </script>
+}
                 <button type="submit" class="btn btn-primary">Create</button>
                 <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
             </form>

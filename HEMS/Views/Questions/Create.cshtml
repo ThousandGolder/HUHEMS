@@ -26,11 +26,43 @@
                             <a asp-controller="Exams" asp-action="Details" asp-route-id="@ViewBag.ExamId" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left"></i> Cancel
                             </a>
-                            <button type="submit" class="btn btn-primary px-4">Save & Add Choices</button>
+                            <button type="submit" id="saveQuestionBtn" class="btn btn-primary px-4">Save & Add Choices</button>
                         </div>
                     </form>
                 </div>
             </div>
+
+            <script>
+                (function(){
+                    const form = document.querySelector('form[asp-action="Create"][method="post"]');
+                    if (!form) return;
+                    form.addEventListener('submit', async function(e){
+                        e.preventDefault();
+                        const fd = new FormData(form);
+                        try {
+                            const res = await fetch(form.action, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+                            const data = await res.json();
+                            if (data && data.duplicate) {
+                                // show inline banner instead of modal to avoid duplicate notifications
+                                try {
+                                    const existing = document.getElementById('pageAlert');
+                                    if (existing) existing.remove();
+                                    const container = document.querySelector('.container');
+                                    const alertHtml = `\n                                        <div id="pageAlert" class="alert alert-warning alert-dismissible fade show" role="alert">\n                                            <i class="bi bi-exclamation-triangle-fill me-2"></i> ${data.message}\n                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>\n                                        </div>`;
+                                    if (container) container.insertAdjacentHTML('afterbegin', alertHtml);
+                                } catch (e) { console.error(e); }
+                                return;
+                            }
+                            if (data && data.success && data.redirectUrl) {
+                                window.location.href = data.redirectUrl;
+                                return;
+                            }
+                            // fallback
+                            form.submit();
+                        } catch (err) { console.error(err); form.submit(); }
+                    });
+                })();
+            </script>
 
             <div class="card shadow-sm border-0 border-start border-4 border-success bg-light">
                 <div class="card-body p-4">

@@ -371,6 +371,37 @@ body {
 #reusableConfirmModal .btn-light { background: #fff; border: 1px solid #e9eef3; }
 #reusableConfirmModal .modal-body p { color: #475569; }
 
+/* Hamburger (mobile) button - use brand green instead of white */
+#sidebarCollapse, #sidebarClose {
+    background-color: #228B22 !important; /* brand green */
+    color: #fff !important;
+    border-color: rgba(0,0,0,0.08) !important;
+}
+
+#sidebarCollapse i, #sidebarClose i {
+    color: #fff !important;
+}
+
+#sidebarCollapse:hover, #sidebarClose:hover {
+    background-color: #1b6f1b !important; /* slightly darker on hover */
+}
+
+/* Brand text and logo: hidden on desktop, show on small devices only */
+.brand-text { display: none; }
+.brand-logo { display: none; }
+/* subtitle (Coordinator/Student Portal) should display on all sizes */
+.brand-sub { display: inline-block; color: #ffffff; font-size: 1rem; font-weight: 600; opacity: 0.95; margin-left: 0.5rem; }
+
+@media (max-width: 991.98px) {
+    .brand-text { display: inline-block !important; }
+    .brand-logo { display: inline-block !important; }
+    /* keep subtitle visible on small devices as well */
+    .brand-sub { display: inline-block !important; }
+}
+@media (max-width: 991.98px) {
+    .brand-logo { display: inline-block; }
+}
+
 /* --- Desktop Table Styling --- */
 .table-card {
     border-radius: 16px;

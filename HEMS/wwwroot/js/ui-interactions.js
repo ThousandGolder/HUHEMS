@@ -48,6 +48,18 @@
             if (iconEl) { iconEl.className = 'bi bi-info-circle-fill'; iconEl.style.color = ''; }
         }
 
+        // Make the message text red for warnings/danger to increase visibility
+        const msgEl = document.getElementById('confirmMessage');
+        if (msgEl) {
+            if (type === 'warning' || type === 'danger') {
+                msgEl.style.color = '#dc2626';
+            } else {
+                msgEl.style.color = '#475569';
+            }
+        }
+
+        // Do not hide page banners here anymore - layout controls duplicates. Keep modal-only behavior.
+
         const confirmBtn = document.getElementById('confirmActionButton');
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using HEMS.Models;
 using HEMS.Data;
 using System.Threading.Tasks;
@@ -57,8 +58,45 @@ namespace HEMS.Controllers
             return View();
         }
 
+        [HttpGet]
+        [Authorize]
+        public IActionResult ChangePassword()
+        {
+            return View("~/Views/Student/ChangePassword.cshtml");
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(string oldPassword, string newPassword, string confirmPassword)
+        {
+            if (newPassword != confirmPassword)
+            {
+                ModelState.AddModelError(string.Empty, "The new password and confirmation do not match.");
+                return View("~/Views/Student/ChangePassword.cshtml");
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return RedirectToAction("Login", "Account");
+
+            var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+
+            if (result.Succeeded)
+            {
+                await _signInManager.RefreshSignInAsync(user);
+                TempData["SuccessMessage"] = "Your password has been updated successfully.";
+                if (await _userManager.IsInRoleAsync(user, "Coordinator"))
+                    return RedirectToAction("Index", "Exams");
+                return RedirectToAction("Index", "Student");
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return View("~/Views/Student/ChangePassword.cshtml");
+        }
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
