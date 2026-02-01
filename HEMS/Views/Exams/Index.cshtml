@@ -6,15 +6,72 @@
 }
 <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
 
+<style>
+    /* Decorative icon for Exam Center header - prettier */
+    .app-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--brand-primary-dark), var(--brand-primary));
+        box-shadow: 0 10px 30px rgba(30,155,51,0.12);
+        position: relative;
+    }
+
+    .app-icon::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+        box-shadow: inset 0 -8px 18px rgba(255,255,255,0.03);
+    }
+
+    .app-icon .icon-inner {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.12);
+        backdrop-filter: blur(2px);
+        z-index: 2;
+    }
+
+    .app-icon .bi { color: #fff; font-size: 1.4rem; }
+
+    .app-icon-badge {
+        position: absolute;
+        right: -8px;
+        top: -8px;
+        background: #fff;
+        color: var(--brand-primary);
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+        border: 2px solid rgba(255,255,255,0.12);
+        z-index: 3;
+    }
+</style>
+
 <div class="container-fluid py-4 px-3 px-lg-4">
     <div class="page-header mb-4 shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div class="d-flex align-items-center gap-3">
-            <div class="bg-primary bg-opacity-10 p-3 rounded-3">
-                <i class="bi bi-kanban-fill text-primary fs-3"></i>
+            <div class="app-icon">
+                <div class="icon-inner">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                </div>
+                <div class="app-icon-badge"><i class="bi bi-star-fill"></i></div>
             </div>
             <div>
                 <h3 class="fw-bold mb-0">Exam Center</h3>
-                <p class="text-muted mb-0 small">Coordinator Portal • Hu Swe Holistic Exam System</p>
             </div>
         </div>
         <a asp-action="Create" class="btn btn-primary btn-popular px-4 py-2 shadow-sm">

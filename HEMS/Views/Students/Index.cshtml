@@ -7,12 +7,7 @@
                 <h3 class="mb-0 fw-bold text-white"><i class="bi bi-people-fill me-2"></i>Student Management</h3>
                 <p class="text-muted small mb-0">Upload CSV to generate student accounts automatically.</p>
             </div>
-            <form asp-action="BulkUpload" method="post" enctype="multipart/form-data" class="d-flex gap-2">
-                <input type="file" name="studentFile" class="form-control" accept=".csv" required />
-                <button type="submit" class="btn btn-light px-4">
-                    <i class="bi bi-file-earmark-arrow-up text-primary"></i> Import
-                </button>
-            </form>
+            
         </div>
     </div>
 
@@ -53,8 +48,17 @@
                 }
             </tbody>
         </table>
-        <div class="mt-3">
+        <div class="mt-3 d-flex align-items-center gap-3">
             <a asp-action="Create" class="btn btn-primary">Add Student</a>
+
+            <form asp-action="BulkUpload" method="post" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+                <input type="file" name="studentFile" class="form-control form-control-sm" accept=".csv" required />
+                <button type="submit" class="btn btn-outline-primary btn-sm">Import</button>
+            </form>
+
+            <a class="btn btn-outline-secondary btn-sm" href="~/templates/student-upload-template.csv" download>
+                <i class="bi bi-download me-1"></i>Student CSV template
+            </a>
         </div>
     </div>
 </div>

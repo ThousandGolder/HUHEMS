@@ -506,6 +506,14 @@ header.top-navbar, nav.top-navbar, .top-navbar {
     color: var(--brand-text-on-primary) !important;
 }
 
+/* If a light-tinted primary background is used (bg-primary bg-opacity-10),
+   ensure icons/text inside remain visible (use darker brand shade) */
+.bg-primary.bg-opacity-10 .bi,
+.bg-primary.bg-opacity-10 .text-primary,
+.bg-primary.bg-opacity-10 i {
+    color: var(--brand-primary-dark) !important;
+}
+
 /* Override Bootstrap utility classes that might set purple text/icons */
 .text-primary, a.text-primary, .bi.text-primary { color: var(--brand-primary) !important; }
 

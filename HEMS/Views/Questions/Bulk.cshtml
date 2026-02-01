@@ -1,0 +1,25 @@
+@{
+    ViewData["Title"] = "Bulk Upload Questions";
+}
+
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Bulk Upload Questions</h5>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted">Upload a ZIP containing a manifest.csv and optional images folder. See the template for CSV format.</p>
+
+            <form asp-controller="Exams" asp-action="BulkUpload" method="post" enctype="multipart/form-data">
+                <div class="input-group mb-3">
+                    <input type="file" name="examZip" class="form-control" accept=".zip" required />
+                    <button type="submit" class="btn btn-primary">Upload ZIP</button>
+                </div>
+            </form>
+
+            <a class="btn btn-outline-primary" href="~/templates/question-upload-template.csv" download>
+                <i class="bi bi-download me-1"></i>Download question CSV template
+            </a>
+        </div>
+    </div>
+</div>
