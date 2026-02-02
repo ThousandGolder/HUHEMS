@@ -4,7 +4,6 @@
     ViewData["Title"] = "Student Dashboard";
 }
 
-<!-- Inline CSS moved to wwwroot/css/layout.css to centralize theme styles and enable reuse across views -->
 <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
 
 @{
@@ -22,7 +21,6 @@
     </div>
 }
 
-
 <div class="container-fluid py-4 px-lg-5">
     <div class="page-header p-4 mb-4 shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div>
@@ -34,13 +32,9 @@
         </a>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
-            <i class="bi bi-exclamation-octagon-fill me-2"></i> @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
+    @* REMOVED: TempData["Error"] block was removed from here because 
+       it is already handled globally in _Layout.cshtml.
+    *@
 
     @if (!Model.Any())
     {
@@ -79,7 +73,7 @@
                             <td class="text-center">
                                 <button type="button" class="btn btn-brand btn-sm px-4 rounded-pill"
                                         data-bs-toggle="modal"
-                                data-bs-target="#verifyInstrModal-@item.ExamId">
+                                        data-bs-target="#verifyInstrModal-@item.ExamId">
                                     Start Exam
                                 </button>
                             </td>
@@ -112,7 +106,6 @@
 
         @foreach (var item in Model)
         {
-            <!-- Instruction Modal (large) -->
             <div class="modal fade" id="verifyInstrModal-@item.ExamId" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-xl modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg" style="min-width:760px; max-width:95vw; min-height:520px;">
@@ -142,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- Code Entry Modal (small) -->
             <div class="modal fade" id="verifyModal-@item.ExamId" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg">
@@ -182,19 +174,19 @@
         // Instruction modal handler (large modal)
         $('[id^="verifyInstrModal-"]').on('shown.bs.modal', function () {
             const modal = $(this);
-            const id = (modal.attr('id') || '').split('-')[1];
-            if (!id) return;
-
+            const id = modal.attr('id').split('-')[1];
             const accept = modal.find(`#acceptTermsInstr-${id}`);
             const cont = modal.find(`#instrContinue-${id}`);
 
             function updateContinue() { cont.prop('disabled', !accept.is(':checked')); }
+
             updateContinue();
             accept.off('change').on('change', updateContinue);
 
             cont.off('click').on('click', function () {
-                // hide instruction modal then show small code modal
-                try { bootstrap.Modal.getInstance(modal[0])?.hide(); } catch (e) { modal.modal('hide'); }
+                const modalInstance = bootstrap.Modal.getInstance(modal[0]);
+                if(modalInstance) modalInstance.hide();
+
                 const codeModalEl = document.getElementById(`verifyModal-${id}`);
                 if (codeModalEl) {
                     const m = new bootstrap.Modal(codeModalEl);
@@ -203,17 +195,14 @@
             });
         });
 
-        // Code modal handler (small modal): focus and validate code input
+        // Code modal handler: focus and validate code input
         $('[id^="verifyModal-"]').on('shown.bs.modal', function () {
             const modal = $(this);
-            const id = (modal.attr('id') || '').split('-')[1];
-            if (!id) return;
-
             const codeInput = modal.find('input[name="enteredCode"]');
             const submitBtn = modal.find('button[type="submit"]');
 
             function updateSubmit() {
-                const val = (codeInput.val() || '').toString().trim();
+                const val = codeInput.val().trim();
                 const ok = /^\d{4}$/.test(val);
                 submitBtn.prop('disabled', !ok);
             }

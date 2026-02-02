@@ -97,7 +97,38 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
-// Optional: Catch-all fallback for routes that don't match anything
+// Auto Creating an Admin User if not exists
 app.MapFallbackToController("NotFound", "Home");
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+    // 1. Ensure Role Exists
+    if (!await roleManager.RoleExistsAsync("Coordinator"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Coordinator"));
+    }
+
+    // 2. Ensure Admin User Exists
+    var adminEmail = "admin@huhems.edu";
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+
+    if (adminUser == null)
+    {
+        var newAdmin = new ApplicationUser
+        {
+            UserName = "admin",
+            Email = adminEmail,
+            EmailConfirmed = true
+        };
+        // This creates the user with password "Admin@123"
+        await userManager.CreateAsync(newAdmin, "Admin@123");
+        await userManager.AddToRoleAsync(newAdmin, "Coordinator");
+    }
+}
+
 
 app.Run();
