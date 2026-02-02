@@ -1,4 +1,4 @@
-﻿/* Custom Modal Styling */
+﻿/* ================= MODAL STYLING ================= */
 #deleteModal .modal-content {
     border-radius: 12px;
     overflow: hidden;
@@ -19,13 +19,13 @@
     background-color: #f8f9fa;
 }
 
-/* SECURITY: Prevent Interaction */
+/* ================= SECURITY ================= */
 .exam-secure-zone {
     user-select: none;
     -webkit-user-select: none;
 }
 
-/* Header & Timer */
+/* ================= HEADER & TIMER ================= */
 .exam-header-bar {
     background: #fff;
     padding: 1rem;
@@ -42,7 +42,7 @@
     font-size: 1.1rem;
 }
 
-/* Navigation Grid Box */
+/* ================= QUESTION NAV GRID ================= */
 .sticky-nav {
     position: sticky;
     top: 20px;
@@ -81,14 +81,7 @@
         border-top: 4px solid #dc3545;
     }
 
-/* Print Protection */
-@media print {
-    body {
-        display: none !important;
-    }
-}
-
-/* Status badge subtle colors */
+/* ================= STATUS BADGES ================= */
 .bg-success-subtle {
     background-color: #e8f5e9;
 }
@@ -97,16 +90,52 @@
     background-color: #ffebee;
 }
 
-/* Print styling for reports */
+/* ================= PRINT FIX (CRITICAL) ================= */
 @media print {
+
+    /* Keep content visible */
+    body {
+        background: #fff !important;
+    }
+
+    /* Hide controls */
+    .btn,
     .btn-group,
+    .btn-sm,
     nav,
-    .btn-sm {
+    footer {
         display: none !important;
     }
 
+    /* Cards */
     .card {
-        border: 1px solid #ddd !important;
+        border: 1px solid #000 !important;
         box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+
+    /* Tables */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    th, td {
+        border: 1px solid #000 !important;
+        padding: 6px !important;
+        color: #000 !important;
+    }
+
+    /* Chart & media */
+    canvas,
+    img {
+        display: block !important;
+        max-width: 100% !important;
+    }
+
+    /* Force background colors to print */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 }

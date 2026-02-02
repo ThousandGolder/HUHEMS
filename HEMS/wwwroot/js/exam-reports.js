@@ -9,7 +9,7 @@ function initGeneralReportChart(labels, dataPoints) {
 
     const ctx = canvas.getContext('2d');
 
-    // Destroy existing chart instance if it exists (prevents ghosting on refreshes)
+    // Destroy existing chart instance if it exists (prevents ghosting)
     if (window.myExamChart) {
         window.myExamChart.destroy();
     }
@@ -30,26 +30,51 @@ function initGeneralReportChart(labels, dataPoints) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false, // IMPORTANT for printing
             scales: {
                 y: {
                     beginAtZero: true,
                     max: 100,
                     ticks: {
-                        callback: function (value) {
-                            return value + "%";
-                        }
+                        callback: value => value + "%"
                     }
                 }
             },
             plugins: {
+                legend: {
+                    display: true
+                },
                 tooltip: {
                     callbacks: {
-                        label: function (context) {
-                            return `Avg: ${context.parsed.y}%`;
-                        }
+                        label: context => `Avg: ${context.parsed.y}%`
                     }
                 }
             }
         }
     });
 }
+
+/* ================= PRINT SUPPORT (CRITICAL FIX) ================= */
+
+window.addEventListener("beforeprint", () => {
+    const canvas = document.getElementById("examChart");
+    if (!canvas) return;
+
+    // Convert chart to image for print
+    const img = document.createElement("img");
+    img.src = canvas.toDataURL("image/png");
+    img.style.maxWidth = "100%";
+    img.style.display = "block";
+    img.id = "chart-print-image";
+
+    canvas.style.display = "none";
+    canvas.parentNode.appendChild(img);
+});
+
+window.addEventListener("afterprint", () => {
+    const img = document.getElementById("chart-print-image");
+    const canvas = document.getElementById("examChart");
+
+    if (img) img.remove();
+    if (canvas) canvas.style.display = "block";
+});
