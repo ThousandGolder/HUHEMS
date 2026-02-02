@@ -41,4 +41,4 @@ The system utilizes a highly normalized relational schema (3rd Normal Form) to e
 3.  **Apply Migrations**: Run `Update-Database` in the Package Manager Console.
 4.  **Run**: Press `F5` or use `dotnet run` in the IDE.
 5.  **Note**: Public registration is disabled; use the Coordinator dashboard to import student accounts.
-6.  "The system automatically creates a default Coordinator account on first run. Login: admin / Password: Admin@123"
+6.  **The system automatically creates a default Coordinator account on first run. Login: admin / Password: Admin@123**
