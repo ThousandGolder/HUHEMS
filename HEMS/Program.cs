@@ -4,7 +4,6 @@ using HEMS.Data;
 using HEMS.Models;
 using HEMS.Services;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Database Connection
@@ -15,11 +14,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
 builder.Services.AddScoped<IExamImportService, ExamImportService>();
 
 // 2. Identity Configuration
-// CHANGED: Use AddIdentity instead of AddDefaultIdentity to support custom AccountController
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = false;
@@ -30,7 +27,6 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// Configure Application Cookie to point to your CUSTOM Account Controller
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -43,7 +39,7 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// 3. Automated Database and Role Seeding (Improved with Async)
+// 3. Automated Database and Role Seeding
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -52,13 +48,11 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ApplicationDbContext>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-        // Ensure DB is updated
         context.Database.Migrate();
 
         string[] roleNames = { "Coordinator", "Student" };
         foreach (var roleName in roleNames)
         {
-            // Using Task.Run to avoid deadlocks in seeding
             var roleExist = Task.Run(() => roleManager.RoleExistsAsync(roleName)).Result;
             if (!roleExist)
             {
@@ -84,6 +78,10 @@ else
     app.UseHsts();
 }
 
+// FIX: Handle 404 - Page Not Found for all invalid routes
+// This sends the user to the NotFound action in HomeController
+app.UseStatusCodePagesWithReExecute("/Home/NotFound/{0}");
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
@@ -92,10 +90,14 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 5. Routing
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
 
 app.MapRazorPages();
+
+// Optional: Catch-all fallback for routes that don't match anything
+app.MapFallbackToController("NotFound", "Home");
 
 app.Run();

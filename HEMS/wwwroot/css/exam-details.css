@@ -87,3 +87,26 @@
         display: none !important;
     }
 }
+
+/* Status badge subtle colors */
+.bg-success-subtle {
+    background-color: #e8f5e9;
+}
+
+.bg-danger-subtle {
+    background-color: #ffebee;
+}
+
+/* Print styling for reports */
+@media print {
+    .btn-group,
+    nav,
+    .btn-sm {
+        display: none !important;
+    }
+
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+}

@@ -2,10 +2,15 @@
 
 @{
     ViewData["Title"] = "Exam Report";
+
     // Statistics for the Specific Exam View
     var passCount = Model.Count(x => x.Status == "Passed");
     var taken = Model.Where(x => x.Status != "Not Taken").ToList();
     var avgScore = taken.Any() ? Math.Round(taken.Average(x => x.Percentage), 1) : 0;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/exam-details.css" asp-append-version="true" />
 }
 
 <div class="container mt-3">
@@ -32,10 +37,12 @@
             <div class="col-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Overall Exam Performance</h5>
+                        <h5 class="mb-0">
+                            <i class="bi bi-bar-chart-fill me-2"></i>Overall Exam Performance
+                        </h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="examChart" style="max-height: 350px;"></canvas>
+                        <canvas id="examChart" class="w-100" style="max-height:350px;"></canvas>
                     </div>
                 </div>
             </div>
@@ -60,9 +67,15 @@
                                 <td class="ps-4 fw-bold">@item.ExamTitle</td>
                                 <td>@item.TotalQuestions</td>
                                 <td>@item.StudentCount</td>
-                                <td><span class="badge bg-primary">@item.AvgPercentage%</span></td>
+                                <td>
+                                    <span class="badge bg-primary">@item.AvgPercentage%</span>
+                                </td>
                                 <td class="text-center">
-                                    <a asp-action="Reports" asp-route-id="@item.ExamId" class="btn btn-sm btn-outline-primary">View Details</a>
+                                    <a asp-action="Reports"
+                                       asp-route-id="@item.ExamId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        View Details
+                                    </a>
                                 </td>
                             </tr>
                         }
@@ -80,23 +93,25 @@
                     <div class="card border-0 shadow-sm bg-primary text-white">
                         <div class="card-body text-center">
                             <h6>Total Attempts</h6>
-                            <h2 class="mb-0 fw-bold">@Model.Count(x => x.Status != "Not Taken")</h2>
+                            <h2 class="fw-bold mb-0">@Model.Count(x => x.Status != "Not Taken")</h2>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <div class="card border-0 shadow-sm bg-success text-white">
                         <div class="card-body text-center">
                             <h6>Average Percentage</h6>
-                            <h2 class="mb-0 fw-bold">@avgScore%</h2>
+                            <h2 class="fw-bold mb-0">@avgScore%</h2>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <div class="card border-0 shadow-sm bg-info text-white">
                         <div class="card-body text-center">
                             <h6>Pass Rate</h6>
-                            <h2 class="mb-0 fw-bold">@passCount / @Model.Count()</h2>
+                            <h2 class="fw-bold mb-0">@passCount / @Model.Count()</h2>
                         </div>
                     </div>
                 </div>
@@ -120,23 +135,33 @@
                             @foreach (var item in Model)
                             {
                                 <tr>
-                                    <td class="ps-4">
-                                        <div class="fw-bold text-dark">@item.StudentName</div>
-                                    </td>
+                                    <td class="ps-4 fw-bold">@item.StudentName</td>
                                     <td>
                                         <span class="text-primary fw-bold">@item.Score</span>
                                         <span class="text-muted">/ @item.TotalQuestions</span>
                                     </td>
                                     <td>
-                                        <div class="progress" style="height: 8px; width: 100px;">
-                                            <div class="progress-bar @(item.Status == "Passed" ? "bg-success" : item.Status == "Failed" ? "bg-danger" : "bg-secondary")"
-                                                 role="progressbar" style="width: @item.Percentage%"></div>
+                                        <div class="progress" style="height:8px;width:100px;">
+                                            <div class="progress-bar
+                                                @(item.Status == "Passed" ? "bg-success" :
+                                                  item.Status == "Failed" ? "bg-danger" : "bg-secondary")"
+                                                 style="width:@item.Percentage%">
+                                            </div>
                                         </div>
                                         <small class="text-muted">@item.Percentage%</small>
                                     </td>
-                                    <td>@(item.DateTaken == DateTime.MinValue ? "-" : item.DateTaken.ToString("MMM dd, yyyy"))</td>
+                                    <td>
+                                        @(item.DateTaken == DateTime.MinValue
+                                            ? "-"
+                                            : item.DateTaken.ToString("MMM dd, yyyy"))
+                                    </td>
                                     <td class="text-center">
-                                        <span class="badge rounded-pill @(item.Status == "Passed" ? "bg-success-subtle text-success border border-success" : item.Status == "Failed" ? "bg-danger-subtle text-danger border border-danger" : "bg-secondary-subtle text-secondary border border-secondary") px-3">
+                                        <span class="badge rounded-pill px-3
+                                            @(item.Status == "Passed"
+                                                ? "bg-success-subtle text-success border border-success"
+                                                : item.Status == "Failed"
+                                                ? "bg-danger-subtle text-danger border border-danger"
+                                                : "bg-secondary-subtle text-secondary border border-secondary")">
                                             @item.Status
                                         </span>
                                     </td>
@@ -149,35 +174,16 @@
                 @if (!Model.Any())
                 {
                     <div class="text-center py-5">
-                        <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-2">No students have attempted this exam yet.</p>
+                        <i class="bi bi-clipboard-x text-muted fs-1"></i>
+                        <p class="text-muted mt-2">
+                            No students have attempted this exam yet.
+                        </p>
                     </div>
                 }
             </div>
         </div>
     }
 </div>
-
-<style>
-    .bg-success-subtle {
-        background-color: #e8f5e9;
-    }
-
-    .bg-danger-subtle {
-        background-color: #ffebee;
-    }
-
-    @@media print {
-        .btn-group, nav, .btn-sm {
-            display: none !important;
-        }
-
-        .card {
-            border: 1px solid #ddd !important;
-            box-shadow: none !important;
-        }
-    }
-</style>
 
 @section Scripts {
     @if (ViewBag.IsGeneralReport == true)
